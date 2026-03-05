@@ -1,5 +1,6 @@
 <?php
 require 'config.php';
+require_once __DIR__ . '/../auto_email/send_booking_email.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form data
@@ -124,6 +125,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $payment_stmt->execute();
 
         $conn->commit();
+
+        // ── Send booking confirmation email ──────────────────────────────
+        // Fetch event name from the events table to derive the tour type
+        $ev_stmt = $conn->prepare("SELECT name, is_overnight FROM events WHERE id = ? LIMIT 1");
+        $ev_stmt->bind_param("i", $event_id);
+        $ev_stmt->execute();
+        $ev_row     = $ev_stmt->get_result()->fetch_assoc();
+        $tour_type  = $ev_row ? $ev_row['name']        : 'N/A';
+        $is_overnight = $ev_row ? (bool)$ev_row['is_overnight'] : false;
+
+        sendBookingConfirmationEmail(
+            $booking_id,
+            $email,
+            $full_name,
+            $event_title,
+            $event_type,
+            $tour_type,
+            $guests,
+            $booking_date,
+            $start_time,
+            $end_time,
+            $is_overnight
+        );
+        // ────────────────────────────────────────────────────────────────
 
         echo json_encode([
             'success' => true,

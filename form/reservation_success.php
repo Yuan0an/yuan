@@ -8,12 +8,17 @@ if (!isset($_GET['id'])) {
 
 $reservation_id = intval($_GET['id']);
 
-// Fetch reservation details
+// Fetch reservation details from the correct tables
 $stmt = $conn->prepare("
-    SELECT r.*, e.name as event_base_name
-    FROM reservations r
-    JOIN events e ON r.event_id = e.id
-    WHERE r.id = ?
+    SELECT b.*,
+           c.full_name, c.email, c.phone, c.alt_phone, c.company,
+           p.payment_method, p.payment_status, p.total_price,
+           e.name as event_base_name
+    FROM bookings b
+    JOIN customers  c ON b.customer_id = c.id
+    JOIN payments   p ON p.booking_id  = b.id
+    JOIN events     e ON b.event_id    = e.id
+    WHERE b.id = ?
 ");
 $stmt->bind_param("i", $reservation_id);
 $stmt->execute();
@@ -25,19 +30,19 @@ if (!$reservation) {
 
 $addons = json_decode($reservation['addons_json'], true) ?: [];
 $addon_prices = [
-    'lpg' => 250,
-    'butane' => 150,
-    'bonfire' => 500,
-    'pet' => 200,
-    'darts' => 250,
+    'lpg'      => 250,
+    'butane'   => 150,
+    'bonfire'  => 500,
+    'pet'      => 200,
+    'darts'    => 250,
     'billiard' => 500
 ];
 $addon_names = [
-    'lpg' => 'LPGas',
-    'butane' => 'Butane',
-    'bonfire' => 'Bonfire',
-    'pet' => 'Pet Fee',
-    'darts' => 'Darts Game',
+    'lpg'      => 'LPGas',
+    'butane'   => 'Butane',
+    'bonfire'  => 'Bonfire',
+    'pet'      => 'Pet Fee',
+    'darts'    => 'Darts Game',
     'billiard' => 'Billiard'
 ];
 ?>

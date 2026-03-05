@@ -82,6 +82,7 @@ CREATE TABLE payments (
     payment_method VARCHAR(50),
     payment_status VARCHAR(50),
     payment_proof VARCHAR(255),
+    receipt_data LONGTEXT,
 
     total_price DECIMAL(10,2),
     time_uploaded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

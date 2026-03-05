@@ -19,26 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    file_put_contents('/tmp/login_debug.txt', "Login attempt: User=$username\n", FILE_APPEND);
-
     if ($result->num_rows === 1) {
-        $admin = $result->fetch_assoc();
+        $admin  = $result->fetch_assoc();
         $verify = password_verify($password, $admin['password']);
-        file_put_contents('/tmp/login_debug.txt', "User found. ID=" . $admin['id'] . ", Verify=" . ($verify ? 'YES' : 'NO') . "\n", FILE_APPEND);
 
         if ($verify) {
             $_SESSION['admin_logged_in'] = true;
-            $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_name'] = $admin['full_name'];
-
-            // Log session status
-            file_put_contents('/tmp/login_debug.txt', "Session set. Redirecting.\n", FILE_APPEND);
+            $_SESSION['admin_id']        = $admin['id'];
+            $_SESSION['admin_name']      = $admin['full_name'];
 
             header('Location: dashboard.php');
             exit;
         }
-    } else {
-        file_put_contents('/tmp/login_debug.txt', "User not found.\n", FILE_APPEND);
     }
 
     $error = 'Invalid username or password';
