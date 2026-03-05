@@ -126,7 +126,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $conn->commit();
 
-        // ── Send booking confirmation email ──────────────────────────────
+        echo json_encode([
+            'success' => true,
+            'reservation_id' => $booking_id, // Keeping key name for frontend compatibility
+            'message' => 'Reservation request submitted successfully!'
+        ]);
+
+        // Close connection to browser early so the user doesn't wait for the email
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+
+        // ── Send booking confirmation email in "background" ────────────────
         // Fetch event name from the events table to derive the tour type
         $ev_stmt = $conn->prepare("SELECT name, is_overnight FROM events WHERE id = ? LIMIT 1");
         $ev_stmt->bind_param("i", $event_id);
@@ -149,12 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $is_overnight
         );
         // ────────────────────────────────────────────────────────────────
-
-        echo json_encode([
-            'success' => true,
-            'reservation_id' => $booking_id, // Keeping key name for frontend compatibility
-            'message' => 'Reservation request submitted successfully!'
-        ]);
 
     } catch (Exception $e) {
         $conn->rollback();

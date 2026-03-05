@@ -20,6 +20,7 @@ function getMailer() {
 
     $mail->SMTPSecure = 'tls';
     $mail->Port       = 587;
+    $mail->Timeout    = 10; // 10 seconds timeout
 
     $mail->setFrom('calmayuan0@gmail.com', 'CK Resort');
 
