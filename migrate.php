@@ -18,6 +18,18 @@ $migrations = [
 $all_ok = true;
 foreach ($migrations as $label => $sql) {
     echo "Running: $label ... ";
+    
+    // Compatibility check: See if column exists first
+    if (strpos($sql, 'ADD COLUMN') !== false) {
+        $check = $conn->query("SHOW COLUMNS FROM payments LIKE 'receipt_data'");
+        if ($check && $check->num_rows > 0) {
+            echo "✅ Already exists (Skipped)\n";
+            continue;
+        }
+        // Remove 'IF NOT EXISTS' for compatibility with older MySQL
+        $sql = str_replace('IF NOT EXISTS ', '', $sql);
+    }
+
     if ($conn->query($sql)) {
         echo "✅ OK\n";
     } else {
