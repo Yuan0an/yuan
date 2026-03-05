@@ -1,0 +1,125 @@
+/* uploader/style.css */
+:root {
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --bg-glass: rgba(255, 255, 255, 0.9);
+    --border-color: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --success: #10b981;
+}
+
+.upload-container {
+    font-family: 'Inter', -apple-system, sans-serif;
+    max-width: 500px;
+    margin: 20px auto;
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(248, 250, 252, 0.5);
+    position: relative;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.upload-text {
+    color: var(--text-main);
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.upload-hint {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+#file-input {
+    display: none;
+}
+
+.preview-container {
+    margin-top: 20px;
+    display: none;
+}
+
+.preview-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.upload-progress {
+    height: 6px;
+    width: 100%;
+    background: #f1f5f9;
+    border-radius: 10px;
+    margin-top: 15px;
+    overflow: hidden;
+    display: none;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.status-message {
+    margin-top: 15px;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.status-message.success {
+    color: var(--success);
+}
+
+.status-message.error {
+    color: #ef4444;
+}
+
+.btn-upload {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: none;
+}
+
+.btn-upload:hover {
+    background: var(--primary-hover);
+}
