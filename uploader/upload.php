@@ -42,8 +42,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['receipt'])) {
         // Connect to DB
         require_once '../form/config.php';
 
-        // We assume receipt_data exists because of the migration.
-        // If it doesn't, the UPDATE will fail and we catch the error.
+        // SELF-HEALING: Verify 'receipt_data' exists, if not add it.
+        $checkCol = $conn->query("SHOW COLUMNS FROM payments LIKE 'receipt_data'");
+        if ($checkCol && $checkCol->num_rows === 0) {
+            $conn->query("ALTER TABLE payments ADD COLUMN receipt_data LONGTEXT");
+            // Also add 'time_uploaded' if missing (older versions)
+            $checkTime = $conn->query("SHOW COLUMNS FROM payments LIKE 'time_uploaded'");
+            if ($checkTime && $checkTime->num_rows === 0) {
+                $conn->query("ALTER TABLE payments ADD COLUMN time_uploaded TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+        }
 
         $ref_name = 'receipt_' . $res_id . '.' . $file_ext;
 
