@@ -311,11 +311,24 @@ h2 {
 }
 
 /*Sneak Peek Style*/
+.sneak-peek {
+    overflow: hidden;
+    padding: 60px 20px;
+}
+
 .sneak-peek video {
-    border-radius: 15px;
+    width: 100%;
+    height: auto;
     max-width: 900px;
+    border-radius: 15px;
     display: block;
     margin: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    background-color: #000;
+}
+
+.sneak-peek video:focus {
+    outline: none;
 }
 
 /*Facilities Style*/

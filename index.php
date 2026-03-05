@@ -72,7 +72,7 @@ require_once __DIR__ . "/database/database.php";
 
 <!-- Sneak Peek Section -->
 <section class="sneak-peek">
-    <video src="/assets/video/trailer-vid.mp4" controls></video>
+    <video src="/assets/video/trailer-vid.mp4" controls playsinline preload="metadata"></video>
 </section>
 
 <!-- Facilities Section -->
