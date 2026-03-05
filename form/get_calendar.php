@@ -200,9 +200,6 @@ while (($first_day + $days_in_month) % 7 != 0) {
 
 $calendar .= '</tr></table>';
 
-// Debug logging
-file_put_contents('debug_cal.log', "Event: $event_id, Month: $month\n", FILE_APPEND);
-
 echo json_encode([
     'calendar' => $calendar,
     'monthName' => date('F Y', strtotime("$year-$month-01"))
