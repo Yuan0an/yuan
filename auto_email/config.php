@@ -9,22 +9,26 @@ function getMailer() {
     $mail = new PHPMailer(true);
 
     $mail->isSMTP();
-    $mail->Host       = 'smtp.gmail.com';
+    
+    // Use IPv4 specifically - fixes many cloud connection issues
+    $mail->Host       = gethostbyname('smtp.gmail.com'); 
     $mail->SMTPAuth   = true;
 
     // COMPANY EMAIL
     $mail->Username   = 'calmayuan0@gmail.com';
-
-    // APP PASSWORD (NOT normal password)
-    // Ensure 2FA is enabled in your Google Account for this to work.
     $mail->Password   = 'nluqnnkminsfphlj';
 
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL/Encrypted
-    $mail->Port       = 465;
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
+    $mail->Port       = 587;
 
-    $mail->Timeout    = 20; // 20 seconds timeout
+    $mail->Timeout    = 30; // Increased timeout
     
-    // Ignore SSL certificate issues (fixes many "connection failed" errors)
+    // Log debug info to server's error log for troubleshooting on Railway
+    $mail->SMTPDebug  = 3; 
+    $mail->Debugoutput = function($str, $level) {
+        error_log("[SMTP DEBUG] $str");
+    };
+
     $mail->SMTPOptions = array(
         'ssl' => array(
             'verify_peer' => false,
