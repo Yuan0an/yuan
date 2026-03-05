@@ -11,28 +11,32 @@ echo '<h2>🛠 CK Resort — Database Migration</h2>';
 echo '<pre>';
 
 $migrations = [
-    "Add receipt_data column to payments" =>
-        "ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_data LONGTEXT",
-    "Add reservation_id column to bookings" =>
-        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reservation_id VARCHAR(10) UNIQUE",
+    "Add receipt_data to payments" => [
+        "sql" => "ALTER TABLE payments ADD COLUMN receipt_data LONGTEXT",
+        "check" => "SHOW COLUMNS FROM payments LIKE 'receipt_data'"
+    ],
+    "Add time_uploaded to payments" => [
+        "sql" => "ALTER TABLE payments ADD COLUMN time_uploaded TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "check" => "SHOW COLUMNS FROM payments LIKE 'time_uploaded'"
+    ],
+    "Add reservation_id to bookings" => [
+        "sql" => "ALTER TABLE bookings ADD COLUMN reservation_id VARCHAR(10) UNIQUE",
+        "check" => "SHOW COLUMNS FROM bookings LIKE 'reservation_id'"
+    ],
 ];
 
 $all_ok = true;
-foreach ($migrations as $label => $sql) {
+foreach ($migrations as $label => $m) {
     echo "Running: $label ... ";
     
-    // Compatibility check: See if column exists first
-    if (strpos($sql, 'ADD COLUMN') !== false) {
-        $check = $conn->query("SHOW COLUMNS FROM payments LIKE 'receipt_data'");
-        if ($check && $check->num_rows > 0) {
-            echo "✅ Already exists (Skipped)\n";
-            continue;
-        }
-        // Remove 'IF NOT EXISTS' for compatibility with older MySQL
-        $sql = str_replace('IF NOT EXISTS ', '', $sql);
+    // Check if column exists
+    $check = $conn->query($m['check']);
+    if ($check && $check->num_rows > 0) {
+        echo "✅ Already exists (Skipped)\n";
+        continue;
     }
 
-    if ($conn->query($sql)) {
+    if ($conn->query($m['sql'])) {
         echo "✅ OK\n";
     } else {
         echo "❌ FAILED: " . $conn->error . "\n";
