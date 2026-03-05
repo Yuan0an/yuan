@@ -38,26 +38,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['receipt'])) {
     $mime     = $mime_map[$file_ext] ?? 'image/jpeg';
     $data_uri = 'data:' . $mime . ';base64,' . base64_encode($file_data);
 
-    // Connect to DB and save
-    require_once '../form/config.php';
+    try {
+        // Connect to DB
+        require_once '../form/config.php';
 
-    // Add receipt_data column if it doesn't exist (idempotent)
-    $conn->query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_data LONGTEXT");
+        // We assume receipt_data exists because of the migration.
+        // If it doesn't, the UPDATE will fail and we catch the error.
 
-    $ref_name = 'receipt_' . $res_id . '.' . $file_ext; // human-readable label only
+        $ref_name = 'receipt_' . $res_id . '.' . $file_ext;
 
-    $stmt = $conn->prepare("
-        UPDATE payments
-        SET payment_proof  = ?,
-            receipt_data   = ?,
-            time_uploaded  = NOW(),
-            payment_status = 'paid'
-        WHERE booking_id = ?
-    ");
-    $stmt->bind_param("ssi", $ref_name, $data_uri, $res_id);
-    $stmt->execute();
+        $stmt = $conn->prepare("
+            UPDATE payments
+            SET payment_proof  = ?,
+                receipt_data   = ?,
+                time_uploaded  = NOW(),
+                payment_status = 'paid'
+            WHERE booking_id = ?
+        ");
 
-    echo json_encode(['success' => true, 'filename' => $ref_name]);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $conn->error);
+        }
+
+        $stmt->bind_param("ssi", $ref_name, $data_uri, $res_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Execute failed: " . $stmt->error);
+        }
+
+        if ($stmt->affected_rows === 0) {
+            // Check if resonance exists
+            $check = $conn->query("SELECT id FROM payments WHERE booking_id = $res_id");
+            if ($check->num_rows === 0) {
+                throw new Exception("No payment record found for Booking ID: $res_id");
+            }
+        }
+
+        echo json_encode(['success' => true, 'filename' => $ref_name]);
+
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+    }
 
 } else {
     echo json_encode(['success' => false, 'error' => 'No file received.']);

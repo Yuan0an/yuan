@@ -159,7 +159,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         uploadBtn.textContent = 'Confirm & Upload Receipt';
                     }
                 } catch (e) {
-                    showStatus('Server error. Please try again.', 'error');
+                    console.error('Upload Error:', e, xhr.responseText);
+                    showStatus('Server Response Error. Please check if migration was run or if the file is too large.', 'error');
                     uploadBtn.disabled = false;
                     uploadBtn.textContent = 'Confirm & Upload Receipt';
                 }
