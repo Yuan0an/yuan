@@ -160,7 +160,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
     $id = intval($_GET['id']);
     $stmt = $conn->prepare("
         SELECT b.*, c.full_name, c.email, c.phone, c.alt_phone, c.company,
-               p.payment_method, p.payment_status, p.image_path, p.time_uploaded, p.total_price, p.payment_proof,
+               p.payment_method, p.payment_status, p.time_uploaded, p.total_price, p.payment_proof,
                e.name as event_name, e.max_persons, 
                a.full_name as admin_name, a.email as admin_email
         FROM bookings b
@@ -430,11 +430,11 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                     <?php echo ucfirst($single_reservation['payment_status']); ?>
                                 </span>
                             </p>
-                            <?php if (!empty($single_reservation['image_path'])): ?>
+                            <?php if (!empty($single_reservation['payment_proof']) && (strpos($single_reservation['payment_proof'], '.jpg') !== false || strpos($single_reservation['payment_proof'], '.jpeg') !== false || strpos($single_reservation['payment_proof'], '.png') !== false || strpos($single_reservation['payment_proof'], '.gif') !== false)): ?>
                                 <p><strong>Payment Receipt:</strong></p>
-                                <div class="receipt-thumbnail-container" onclick="openReceiptModal('/<?php echo $single_reservation['image_path']; ?>', 'Receipt #<?php echo $single_reservation['id']; ?>')">
-                                    <img src="/<?php echo $single_reservation['image_path']; ?>" alt="Receipt" class="receipt-thumbnail">
-                                    <div class="receipt-overlay">
+                                <div class="receipt-thumbnail-container" onclick="openReceiptModal('/<?php echo $single_reservation['payment_proof']; ?>', 'Receipt #<?php echo $single_reservation['id']; ?>')">
+                                    <img src="/<?php echo $single_reservation['payment_proof']; ?>" alt="Receipt" class="receipt-thumbnail">
+                                    <div class="thumbnail-overlay">
                                         <i class="fas fa-search-plus"></i>
                                     </div>
                                 </div>
