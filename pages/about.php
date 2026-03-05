@@ -1,12 +1,12 @@
 <?php
-    include_once($_SERVER['DOCUMENT_ROOT'] . '/resort-website/database/database.php');
-    include_once($_SERVER['DOCUMENT_ROOT'] . '/resort-website/includes/header.php');
+    include_once __DIR__ . '/../database/database.php';
+    include_once __DIR__ . '/../includes/header.php';
 ?>
 <section class="about-hero">
     <div class="about-hero-content">
         <h1>Welcome to Ck Resort & Events Place</h1>
         <p>Relax, unwind, and enjoy unforgettable moments.</p>
-        <a href="/resort-website/form/index.php" class="btn">Book Now</a>
+        <a href="/form/index.php" class="btn">Book Now</a>
     </div>
 </section>
 
@@ -24,19 +24,19 @@
         </div>
         <div class="about-gallery">
             <div class="about-image">
-                <img src="/resort-website/assets/images/villa-room.jpg" alt="Villa Room">
+                <img src="/assets/images/villa-room.jpg" alt="Villa Room">
                 <h3>Villa Rooms</h3>
             </div>
             <div class="about-image">
-                <img src="/resort-website/assets/images/event-place.jpg" alt="Events Place">
+                <img src="/assets/images/event-place.jpg" alt="Events Place">
                 <h3>Events Place</h3>
             </div>
             <div class="about-image">
-                <img src="/resort-website/assets/images/morning-view4.jpg" alt="Pool Area">
+                <img src="/assets/images/morning-view4.jpg" alt="Pool Area">
                 <h3>Refreshing Pools</h3>
             </div>
             <div class="about-image">
-                <img src="/resort-website/assets/images/bonfire.jpg" alt="Bonfire Area">
+                <img src="/assets/images/bonfire.jpg" alt="Bonfire Area">
                 <h3>Bonfire Area</h3>
         </div>
     </div>
@@ -53,11 +53,5 @@
         referrerpolicy="no-referrer-when-downgrade">
     </iframe>
 </section>
-
-
-
-
-
-
 
 <?php include __DIR__ . "/../includes/footer.php"; ?>

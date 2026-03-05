@@ -57,12 +57,12 @@ $addon_names = [
     <!-- Navigation Bar -->
     <nav class="cs-navbar">
         <div class="cs-nav-left">
-            <img src="/resort-website/assets/images/logo.jpg" alt="CK Resort Logo" class="cs-nav-logo">
-            <a href="/resort-website/index.php" class="cs-nav-brand">CK RESORT</a>
+            <img src="/assets/images/logo.jpg" alt="CK Resort Logo" class="cs-nav-logo">
+            <a href="/index.php" class="cs-nav-brand">CK RESORT</a>
         </div>
         <div class="cs-nav-right">
-            <a href="/resort-website/index.php" class="cs-nav-link">Home</a>
-            <a href="/resort-website/form/index.php" class="cs-nav-link cs-nav-book">Book Now</a>
+            <a href="/index.php" class="cs-nav-link">Home</a>
+            <a href="/form/index.php" class="cs-nav-link cs-nav-book">Book Now</a>
         </div>
     </nav>
 
@@ -342,7 +342,7 @@ $addon_names = [
                 <button onclick="window.print()" class="cs-btn-action cs-btn-print">
                     <i class="fas fa-print"></i> Print Details
                 </button>
-                <a href="/resort-website/index.php" class="cs-btn-action cs-btn-home">
+                <a href="/index.php" class="cs-btn-action cs-btn-home">
                     <i class="fas fa-home"></i> Back to Home
                 </a>
             </div>

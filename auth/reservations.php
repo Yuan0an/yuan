@@ -434,8 +434,8 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             </p>
                             <?php if (!empty($single_reservation['image_path'])): ?>
                                 <p><strong>Payment Receipt:</strong></p>
-                                <div class="receipt-thumbnail-container" onclick="openReceiptModal('/resort-website/<?php echo $single_reservation['image_path']; ?>', 'Receipt #<?php echo $single_reservation['id']; ?>')">
-                                    <img src="/resort-website/<?php echo $single_reservation['image_path']; ?>" alt="Receipt" class="receipt-thumbnail">
+                                <div class="receipt-thumbnail-container" onclick="openReceiptModal('/<?php echo $single_reservation['image_path']; ?>', 'Receipt #<?php echo $single_reservation['id']; ?>')">
+                                    <img src="/<?php echo $single_reservation['image_path']; ?>" alt="Receipt" class="receipt-thumbnail">
                                     <div class="receipt-overlay">
                                         <i class="fas fa-search-plus"></i>
                                     </div>

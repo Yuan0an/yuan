@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadBtn.textContent = 'Uploading...';
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/resort-website/uploader/upload.php', true);
+        xhr.open('POST', '/uploader/upload.php', true);
 
         xhr.upload.onprogress = e => {
             if (e.lengthComputable) {

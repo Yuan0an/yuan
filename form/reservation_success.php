@@ -313,6 +313,7 @@ $addon_names = [
                     // Calculate base rate again for display or just show total if we didn't store base separately
                     // Since we have total_price, let's show breakdown
                     $total = floatval($reservation['total_price']);
+                    $addons = json_decode($reservation['addons_json'], true) ?: [];
                     $addons_sum = 0;
                     foreach ($addons as $key => $qty) {
                         $p = is_numeric($qty) ? intval($qty) * $addon_prices[$key] : $addon_prices[$key];
@@ -368,7 +369,7 @@ $addon_names = [
         <div class="action-buttons">
             <button onclick="window.print()" class="btn btn-print"><i class="fas fa-print"></i> Print Summary</button>
             <a href="check_status.php" class="btn btn-home" style="background:#3b82f6"><i class="fas fa-search"></i> Check Status</a>
-            <a href="/resort-website/index.php" class="btn btn-home"><i class="fas fa-home"></i> Back to Home</a>
+            <a href="/index.php" class="btn btn-home"><i class="fas fa-home"></i> Back to Home</a>
         </div>
     </div>
 </body>

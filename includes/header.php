@@ -6,7 +6,7 @@
     <title>Ck Resort & Events Place</title>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/resort-website/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
 

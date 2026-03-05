@@ -18,12 +18,12 @@
         </div>
 
         <div class="footer-footer">
-            <a href="/resort-website/form/index.php" class="btn-book">BOOK NOW</a>
+            <a href="/form/index.php" class="btn-book">BOOK NOW</a>
             <p class="copyright">&copy; <?php echo date("Y"); ?> Ck Resort & Events Place</p>
         </div>
     </div>
 </footer>
-<script src="/resort-website/assets/js/carousel.js"></script>
-<script src="/resort-website/assets/js/script.js"></script>
+<script src="/assets/js/carousel.js"></script>
+<script src="/assets/js/script.js"></script>
 </body>
 </html>

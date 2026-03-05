@@ -1,10 +1,6 @@
 <?php
-    include_once($_SERVER['DOCUMENT_ROOT'] . '/resort-website/includes/header.php');
-    include_once($_SERVER['DOCUMENT_ROOT'] . '/resort-website/database/database.php');
+    include_once __DIR__ . '/../includes/header.php';
+    include_once __DIR__ . '/../database/database.php';
 ?>
-
-
-
-
 
 <?php include __DIR__ . "/../includes/footer.php"; ?>

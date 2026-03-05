@@ -1,6 +1,6 @@
 <?php
 require 'config.php';
-include_once($_SERVER['DOCUMENT_ROOT'] . '/resort-website/includes/header.php');
+include_once __DIR__ . '/../includes/header.php';
 // Get all events
 $sql = "SELECT * FROM events";
 $result = $conn->query($sql);
@@ -725,7 +725,7 @@ $result = $conn->query($sql);
             };
         });
     </script>
-    <script src="/resort-website/assets/js/script.js"></script>
+    <script src="/assets/js/script.js"></script>
 </body>
 
 </html>

@@ -8,7 +8,7 @@ require_once __DIR__ . "/database/database.php";
     <div class="hero-content">
         <h1>Welcome to Ck Resort & Events Place</h1>
         <p>Relax, unwind, and enjoy unforgettable moments.</p>
-        <a href="/resort-website/form/index.php" class="btn">Book Now</a>
+        <a href="/form/index.php" class="btn">Book Now</a>
     </div>
 </section>
 
@@ -21,13 +21,13 @@ require_once __DIR__ . "/database/database.php";
     
     <div class="featured-grid">
         <div class="featured-card card-blue">
-            <img src="/resort-website/assets/images/RoomsBG.jpg" alt="Room">
+            <img src="/assets/images/RoomsBG.jpg" alt="Room">
         </div>
         <div class="featured-card card-pink">
-            <img src="/resort-website/assets/images/patio-pic.jpg" alt="Patio Area">
+            <img src="/assets/images/patio-pic.jpg" alt="Patio Area">
         </div>
         <div class="featured-card card-purple">
-            <img src="/resort-website/assets/images/bonfire.jpg" alt="Bonfire">
+            <img src="/assets/images/bonfire.jpg" alt="Bonfire">
         </div>
     </div>
 </section>
@@ -52,19 +52,19 @@ require_once __DIR__ . "/database/database.php";
 
     <div class="about-gallery">
         <div class="about-image">
-            <img src="/resort-website/assets/images/villa-room.jpg" alt="Villa Room">
+            <img src="/assets/images/villa-room.jpg" alt="Villa Room">
             <h3>Comfortable Rooms</h3>
         </div>
         <div class="about-image">
-            <img src="/resort-website/assets/images/event-place.jpg" alt="Events Place">
+            <img src="/assets/images/event-place.jpg" alt="Events Place">
             <h3>Events Place</h3>
         </div>
         <div class="about-image">
-            <img src="/resort-website/assets/images/bonfire-view.jpg" alt="Bonfire View">
+            <img src="/assets/images/bonfire-view.jpg" alt="Bonfire View">
             <h3>Exiting Activities</h3>
         </div>
         <div class="about-image">
-            <img src="/resort-website/assets/images/garden-view.jpg" alt="Garden View">
+            <img src="/assets/images/garden-view.jpg" alt="Garden View">
             <h3>Beautiful Spots</h3>
         </div>
     </div>
@@ -72,25 +72,25 @@ require_once __DIR__ . "/database/database.php";
 
 <!-- Sneak Peek Section -->
 <section class="sneak-peek">
-    <video src="/resort-website/assets/video/trailer-vid.mp4" controls></video>
+    <video src="/assets/video/trailer-vid.mp4" controls></video>
 </section>
 
 <!-- Facilities Section -->
 <section class="facilities">
     <div class="facility-card">
-        <img src="/resort-website/assets/images/mini-bar.jpg" alt="Mini Bar">
+        <img src="/assets/images/mini-bar.jpg" alt="Mini Bar">
         <h3>Mini Bar</h3>
     </div>
     <div class="facility-card">
-        <img src="/resort-website/assets/images/basketball-court2.jpg" alt="Basketball Court">
+        <img src="/assets/images/basketball-court2.jpg" alt="Basketball Court">
         <h3>Basketball Court</h3>
     </div>
     <div class="billiards">
-        <img src="/resort-website/assets/images/billard2.jpg" alt="Billiards">
+        <img src="/assets/images/billard2.jpg" alt="Billiards">
         <h3>Billiards</h3>
     </div>
     <div class="bonfire-area">
-        <img src="/resort-website/assets/images/bonfire.jpg" alt="Bonfire Area">
+        <img src="/assets/images/bonfire.jpg" alt="Bonfire Area">
         <h3>Bonfire Area</h3>
     </div>
 </section>
@@ -170,7 +170,7 @@ require_once __DIR__ . "/database/database.php";
         <div class="amenities-grid">
             <div class="amenity-card card-orange">
                 <div class="image-frame">
-                    <img src="/resort-website/assets/images/villa-room.jpg" alt="Rooms">
+                    <img src="/assets/images/villa-room.jpg" alt="Rooms">
                 </div>
                 <div class="amenity-content">
                     <p>We also offer rooms for</p>
@@ -183,7 +183,7 @@ require_once __DIR__ . "/database/database.php";
 
             <div class="amenity-card card-yellow">
                 <div class="image-frame">
-                    <img src="/resort-website/assets/images/garden.jpg" alt="Open Area">
+                    <img src="/assets/images/garden.jpg" alt="Open Area">
                 </div>
                 <div class="amenity-content">
                     <p>We have a 1500 square meter</p>
@@ -197,7 +197,7 @@ require_once __DIR__ . "/database/database.php";
 
             <div class="amenity-card card-green">
                 <div class="image-frame">
-                    <img src="/resort-website/assets/images/morning-view5.jpg" alt="Big Pool">
+                    <img src="/assets/images/morning-view5.jpg" alt="Big Pool">
                 </div>
                 <div class="amenity-content">
                     <p>We have a Big Pool measuring 3-5½ feet</p>
@@ -246,13 +246,13 @@ require_once __DIR__ . "/database/database.php";
 <!-- Rooms Section -->
 <div class="rooms">
     <div class="room-card">
-        <img src="/resort-website/assets/images/cabin-room.jpg" alt="Cabin Room">
+        <img src="/assets/images/cabin-room.jpg" alt="Cabin Room">
         <h3>Cabin Room</h3>
         <p>Ideal for families, offering extra space and comfort for everyone.</p>
     </div>
 
     <div class="room-card">
-        <img src="/resort-website/assets/images/villa-room2.jpg" alt="Villa Room">
+        <img src="/assets/images/villa-room2.jpg" alt="Villa Room">
         <h3>Villa Room</h3>
         <p>Comfortable and affordable rooms perfect for solo travelers and couples.</p>
     </div>
