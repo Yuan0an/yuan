@@ -1,4 +1,3 @@
--- Resort Booking Database Schema
 
 -- -----------------------------
 -- ADMINS TABLE
