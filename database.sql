@@ -88,3 +88,10 @@ CREATE TABLE payments (
 
     FOREIGN KEY (booking_id) REFERENCES bookings(id)
 );
+
+INSERT INTO `events` (`id`, `name`, `start_time`, `end_time`, `max_persons`, `is_overnight`) VALUES
+(1, 'Day Tour', '08:00:00', '16:00:00', 50, 0),
+(2, 'Night Tour', '16:00:00', '00:00:00', 50, 0),
+(3, 'Overnight Stay - 9AM to 7AM', '09:00:00', '07:00:00', 70, 1),
+(4, 'Overnight Stay - 2PM to 12NN', '14:00:00', '12:00:00', 70, 1),
+(5, 'Overnight Stay - 7PM to 5PM', '19:00:00', '17:00:00', 70, 1);
