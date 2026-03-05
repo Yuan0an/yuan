@@ -67,7 +67,7 @@ function sendBookingConfirmationEmail(
         
         $body = "Booking Reservation\n\n";
         $body .= "Thank you for booking with us!\n\n";
-        $body .= "Booking Reference No: " . $booking_id . "\n\n";
+        $body .= "Booking Reference No: " . $ref_number . "\n\n";
         $body .= "Event Title: " . htmlspecialchars($event_title) . "\n\n";
         
         $body .= "Booking Details:\n";

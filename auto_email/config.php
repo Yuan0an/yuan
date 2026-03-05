@@ -16,11 +16,22 @@ function getMailer() {
     $mail->Username   = 'calmayuan0@gmail.com';
 
     // APP PASSWORD (NOT normal password)
+    // Ensure 2FA is enabled in your Google Account for this to work.
     $mail->Password   = 'nluqnnkminsfphlj';
 
-    $mail->SMTPSecure = 'tls';
-    $mail->Port       = 587;
-    $mail->Timeout    = 10; // 10 seconds timeout
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL/Encrypted
+    $mail->Port       = 465;
+
+    $mail->Timeout    = 20; // 20 seconds timeout
+    
+    // Ignore SSL certificate issues (fixes many "connection failed" errors)
+    $mail->SMTPOptions = array(
+        'ssl' => array(
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true
+        )
+    );
 
     $mail->setFrom('calmayuan0@gmail.com', 'CK Resort');
 
