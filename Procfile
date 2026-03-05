@@ -1,1 +1,1 @@
-web: apache2-foreground
+web: php -S 0.0.0.0:$PORT
