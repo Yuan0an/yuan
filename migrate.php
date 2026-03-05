@@ -19,8 +19,12 @@ $migrations = [
         "sql" => "ALTER TABLE payments ADD COLUMN time_uploaded TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
         "check" => "SHOW COLUMNS FROM payments LIKE 'time_uploaded'"
     ],
+    "Add addons_json to bookings" => [
+        "sql" => "ALTER TABLE bookings ADD COLUMN addons_json TEXT",
+        "check" => "SHOW COLUMNS FROM bookings LIKE 'addons_json'"
+    ],
     "Add reservation_id to bookings" => [
-        "sql" => "ALTER TABLE bookings ADD COLUMN reservation_id VARCHAR(10) UNIQUE AFTER addons_json",
+        "sql" => "ALTER TABLE bookings ADD COLUMN reservation_id VARCHAR(10) UNIQUE",
         "check" => "SHOW COLUMNS FROM bookings LIKE 'reservation_id'"
     ],
 ];
