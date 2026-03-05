@@ -46,7 +46,7 @@ function add_dates($result, &$array)
 }
 
 // A. Get bookings for THIS event (Standard check -> 'Booked')
-$stmt = $conn->prepare("SELECT DISTINCT booking_date FROM reservations WHERE event_id = ? AND booking_date BETWEEN ? AND ? AND status = 'approved'");
+$stmt = $conn->prepare("SELECT DISTINCT booking_date FROM bookings WHERE event_id = ? AND booking_date BETWEEN ? AND ? AND status = 'approved'");
 $stmt->bind_param("iss", $event_id, $start_date, $end_date);
 $stmt->execute();
 add_dates($stmt->get_result(), $direct_booked_dates);
@@ -58,7 +58,7 @@ if (isset($same_day_conflicts[$event_id])) {
     $types = str_repeat('i', count($ids)) . 'ss';
     $params = array_merge($ids, [$start_date, $end_date]);
 
-    $sql = "SELECT DISTINCT booking_date FROM reservations WHERE event_id IN ($placeholders) AND booking_date BETWEEN ? AND ? AND status = 'approved'";
+    $sql = "SELECT DISTINCT booking_date FROM bookings WHERE event_id IN ($placeholders) AND booking_date BETWEEN ? AND ? AND status = 'approved'";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$params);
     $stmt->execute();
@@ -71,7 +71,7 @@ foreach ($prev_day_map as $prev_id => $blocked_list) {
         $prev_start = date('Y-m-d', strtotime($start_date . ' -1 day'));
         $prev_end = date('Y-m-d', strtotime($end_date . ' -1 day'));
 
-        $sql = "SELECT DISTINCT booking_date FROM reservations WHERE event_id = ? AND booking_date BETWEEN ? AND ? AND status = 'approved'";
+        $sql = "SELECT DISTINCT booking_date FROM bookings WHERE event_id = ? AND booking_date BETWEEN ? AND ? AND status = 'approved'";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("iss", $prev_id, $prev_start, $prev_end);
         $stmt->execute();
@@ -98,7 +98,7 @@ if (isset($next_day_check_map[$event_id])) {
     $types = str_repeat('i', count($ids_to_check)) . 'ss';
     $params = array_merge($ids_to_check, [$next_start, $next_end]);
 
-    $sql = "SELECT DISTINCT booking_date FROM reservations WHERE event_id IN ($placeholders) AND booking_date BETWEEN ? AND ? AND status = 'approved'";
+    $sql = "SELECT DISTINCT booking_date FROM bookings WHERE event_id IN ($placeholders) AND booking_date BETWEEN ? AND ? AND status = 'approved'";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$params);
     $stmt->execute();
@@ -162,7 +162,7 @@ for ($day = 1; $day <= $days_in_month; $day++) {
         // Count pending reservations for this date
         $stmt = $conn->prepare("
             SELECT COUNT(*) as pending_count 
-            FROM reservations 
+            FROM bookings 
             WHERE event_id = ? 
             AND booking_date = ?
             AND status = 'pending'

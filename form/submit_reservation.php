@@ -49,9 +49,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // For now, let's assume we'll pass it.
     $form_total_price = isset($_POST['total_price_hidden']) ? floatval($_POST['total_price_hidden']) : 0;
 
-    // Check if slot already has approved reservation
+    // 1. Handle Customer (Find existing or Create new)
+    $cust_stmt = $conn->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
+    $cust_stmt->bind_param("s", $email);
+    $cust_stmt->execute();
+    $cust_res = $cust_stmt->get_result();
+
+    if ($cust_res->num_rows > 0) {
+        $customer_id = $cust_res->fetch_assoc()['id'];
+        // Update customer details in case they changed
+        $upd_cust = $conn->prepare("UPDATE customers SET full_name = ?, phone = ?, alt_phone = ?, company = ? WHERE id = ?");
+        $upd_cust->bind_param("ssssi", $full_name, $phone, $alt_phone, $company, $customer_id);
+        $upd_cust->execute();
+    } else {
+        $ins_cust = $conn->prepare("INSERT INTO customers (full_name, email, phone, alt_phone, company) VALUES (?, ?, ?, ?, ?)");
+        $ins_cust->bind_param("sssss", $full_name, $email, $phone, $alt_phone, $company);
+        $ins_cust->execute();
+        $customer_id = $conn->insert_id;
+    }
+
+    // 2. Check Availability in bookings table
     $check_stmt = $conn->prepare("
-        SELECT id FROM reservations 
+        SELECT id FROM bookings 
         WHERE event_id = ? 
         AND booking_date = ?
         AND start_time = ?
@@ -69,50 +88,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // Insert reservation as pending
-    $stmt = $conn->prepare("
-        INSERT INTO reservations (
-            event_id, booking_date, start_time, end_time, persons,
-            full_name, email, phone, alt_phone, company,
-            event_title, event_type, payment_method,
-            terms_accepted, cancellation_accepted, status,
-            total_price, addons_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-    ");
+    // 3. Start Transaction logic (or sequential with error handling)
+    $conn->begin_transaction();
 
-    $stmt->bind_param(
-        "isssissssssssiids",
-        $event_id,
-        $booking_date,
-        $start_time,
-        $end_time,
-        $guests,
-        $full_name,
-        $email,
-        $phone,
-        $alt_phone,
-        $company,
-        $event_title,
-        $event_type,
-        $payment_method,
-        $terms_accepted,
-        $cancellation_accepted,
-        $form_total_price,
-        $addons_json
-    );
+    try {
+        // Insert into bookings
+        $booking_stmt = $conn->prepare("
+            INSERT INTO bookings (
+                customer_id, event_id, booking_date, start_time, end_time, 
+                persons, status, event_title, event_type, addons_json
+            ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+        ");
+        $booking_stmt->bind_param(
+            "iisssisss",
+            $customer_id,
+            $event_id,
+            $booking_date,
+            $start_time,
+            $end_time,
+            $guests,
+            $event_title,
+            $event_type,
+            $addons_json
+        );
+        $booking_stmt->execute();
+        $booking_id = $conn->insert_id;
 
-    if ($stmt->execute()) {
-        $reservation_id = $conn->insert_id;
+        // Insert into payments
+        $payment_stmt = $conn->prepare("
+            INSERT INTO payments (
+                booking_id, payment_method, payment_status, total_price
+            ) VALUES (?, ?, 'unpaid', ?)
+        ");
+        $payment_stmt->bind_param("isd", $booking_id, $payment_method, $form_total_price);
+        $payment_stmt->execute();
+
+        $conn->commit();
 
         echo json_encode([
             'success' => true,
-            'reservation_id' => $reservation_id,
+            'reservation_id' => $booking_id, // Keeping key name for frontend compatibility
             'message' => 'Reservation request submitted successfully!'
         ]);
-    } else {
+
+    } catch (Exception $e) {
+        $conn->rollback();
         echo json_encode([
             'success' => false,
-            'message' => 'Error: ' . $conn->error
+            'message' => 'Error: ' . $e->getMessage()
         ]);
     }
 } else {

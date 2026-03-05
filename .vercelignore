@@ -1,5 +1,0 @@
-/auth/sessions/
-/form/sessions/
-.git
-.gitignore
-node_modules

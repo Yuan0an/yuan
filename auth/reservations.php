@@ -8,17 +8,14 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 // Auto-mark past events before handling actions or fetching data
-// For events crossing midnight, add 1 day to the end time
-$conn->query("UPDATE reservations SET status = 'completed' WHERE status = 'approved' AND 
+$conn->query("UPDATE bookings SET status = 'completed' WHERE status = 'approved' AND 
     DATE_ADD(CONCAT(booking_date, ' ', end_time), INTERVAL IF(end_time <= start_time, 1, 0) DAY) <= NOW() - INTERVAL 1 HOUR");
-$conn->query("UPDATE reservations SET status = 'rejected' WHERE status = 'pending' AND 
+$conn->query("UPDATE bookings SET status = 'rejected' WHERE status = 'pending' AND 
     DATE_ADD(CONCAT(booking_date, ' ', end_time), INTERVAL IF(end_time <= start_time, 1, 0) DAY) <= NOW() - INTERVAL 1 HOUR");
 
 // Auto-delete old cancelled and rejected reservations
-// 1. Delete cancelled reservations 7 days after the booking date
-$conn->query("DELETE FROM reservations WHERE status = 'cancelled' AND booking_date <= CURDATE() - INTERVAL 7 DAY");
-// 2. Delete rejected reservations 3 days after the booking date
-$conn->query("DELETE FROM reservations WHERE status = 'rejected' AND booking_date <= CURDATE() - INTERVAL 3 DAY");
+$conn->query("DELETE FROM bookings WHERE status = 'cancelled' AND booking_date <= CURDATE() - INTERVAL 7 DAY");
+$conn->query("DELETE FROM bookings WHERE status = 'rejected' AND booking_date <= CURDATE() - INTERVAL 3 DAY");
 
 // Handle actions
 if (isset($_GET['action']) && isset($_GET['id'])) {
@@ -28,8 +25,8 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 
     switch ($action) {
         case 'approve':
-            // Check if it's paid first
-            $check = $conn->prepare("SELECT payment_status FROM reservations WHERE id = ?");
+            // Check if it's paid first (in payments table)
+            $check = $conn->prepare("SELECT payment_status FROM payments WHERE booking_id = ?");
             $check->bind_param("i", $id);
             $check->execute();
             $p_res = $check->get_result()->fetch_assoc();
@@ -40,47 +37,40 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 exit;
             }
 
-            $stmt = $conn->prepare("
-                UPDATE reservations 
-                SET status = 'approved', 
-                    payment_status = 'paid',
-                    approved_by = ?, 
-                    approved_at = NOW() 
-                WHERE id = ? AND status = 'pending'
-            ");
-            $stmt->bind_param("ii", $admin_id, $id);
-            $stmt->execute();
-            $_SESSION['message'] = 'Reservation approved successfully';
+            $conn->begin_transaction();
+            try {
+                $stmt = $conn->prepare("UPDATE bookings SET status = 'approved', approved_by = ?, approved_at = NOW() WHERE id = ? AND status = 'pending'");
+                $stmt->bind_param("ii", $admin_id, $id);
+                $stmt->execute();
+
+                $stmt2 = $conn->prepare("UPDATE payments SET payment_status = 'paid' WHERE booking_id = ?");
+                $stmt2->bind_param("i", $id);
+                $stmt2->execute();
+
+                $conn->commit();
+                $_SESSION['message'] = 'Reservation approved successfully';
+            } catch (Exception $e) {
+                $conn->rollback();
+                $_SESSION['error'] = 'Error approving reservation: ' . $e->getMessage();
+            }
             break;
 
         case 'mark_paid':
-            $stmt = $conn->prepare("
-                UPDATE reservations 
-                SET payment_status = 'paid'
-                WHERE id = ? AND status = 'pending'
-            ");
+            $stmt = $conn->prepare("UPDATE payments SET payment_status = 'paid' WHERE booking_id = ?");
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $_SESSION['message'] = 'Reservation marked as paid';
             break;
 
         case 'reject':
-            $stmt = $conn->prepare("
-                UPDATE reservations 
-                SET status = 'rejected' 
-                WHERE id = ? AND status = 'pending'
-            ");
+            $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ? AND status = 'pending'");
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $_SESSION['message'] = 'Reservation rejected';
             break;
 
         case 'cancel':
-            $stmt = $conn->prepare("
-                UPDATE reservations 
-                SET status = 'cancelled' 
-                WHERE id = ?
-            ");
+            $stmt = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?");
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $_SESSION['message'] = 'Reservation cancelled';
@@ -96,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_notes'])) {
     $id = intval($_POST['id']);
     $notes = $conn->real_escape_string(trim($_POST['admin_notes']));
 
-    $stmt = $conn->prepare("UPDATE reservations SET admin_notes = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE bookings SET admin_notes = ? WHERE id = ?");
     $stmt->bind_param("si", $notes, $id);
     $stmt->execute();
 
@@ -113,10 +103,14 @@ $date_to = isset($_GET['date_to']) ? $_GET['date_to'] : '';
 
 // Build query
 $query = "
-    SELECT r.*, e.name as event_name, a.full_name as admin_name
-    FROM reservations r
-    JOIN events e ON r.event_id = e.id
-    LEFT JOIN admins a ON r.approved_by = a.id
+    SELECT b.*, c.full_name, c.email, c.phone, 
+           p.payment_method, p.payment_status, p.total_price,
+           e.name as event_name, a.full_name as admin_name
+    FROM bookings b
+    JOIN customers c ON b.customer_id = c.id
+    JOIN payments p ON p.booking_id = b.id
+    JOIN events e ON b.event_id = e.id
+    LEFT JOIN admins a ON b.approved_by = a.id
     WHERE 1=1
 ";
 
@@ -124,30 +118,30 @@ $params = [];
 $types = '';
 
 if ($status != 'all') {
-    $query .= " AND r.status = ?";
+    $query .= " AND b.status = ?";
     $params[] = $status;
     $types .= 's';
 }
 
 if ($event_id > 0) {
-    $query .= " AND r.event_id = ?";
+    $query .= " AND b.event_id = ?";
     $params[] = $event_id;
     $types .= 'i';
 }
 
 if (!empty($date_from)) {
-    $query .= " AND r.booking_date >= ?";
+    $query .= " AND b.booking_date >= ?";
     $params[] = $date_from;
     $types .= 's';
 }
 
 if (!empty($date_to)) {
-    $query .= " AND r.booking_date <= ?";
+    $query .= " AND b.booking_date <= ?";
     $params[] = $date_to;
     $types .= 's';
 }
 
-$query .= " ORDER BY r.booking_date ASC, r.start_time ASC";
+$query .= " ORDER BY b.booking_date ASC, b.start_time ASC";
 
 // Get reservations
 $stmt = $conn->prepare($query);
@@ -165,12 +159,16 @@ $single_reservation = null;
 if (isset($_GET['id']) && !isset($_GET['action'])) {
     $id = intval($_GET['id']);
     $stmt = $conn->prepare("
-        SELECT r.*, e.name as event_name, e.max_persons, 
+        SELECT b.*, c.full_name, c.email, c.phone, c.alt_phone, c.company,
+               p.payment_method, p.payment_status, p.image_path, p.time_uploaded, p.total_price, p.payment_proof,
+               e.name as event_name, e.max_persons, 
                a.full_name as admin_name, a.email as admin_email
-        FROM reservations r
-        JOIN events e ON r.event_id = e.id
-        LEFT JOIN admins a ON r.approved_by = a.id
-        WHERE r.id = ?
+        FROM bookings b
+        JOIN customers c ON b.customer_id = c.id
+        JOIN payments p ON p.booking_id = b.id
+        JOIN events e ON b.event_id = e.id
+        LEFT JOIN admins a ON b.approved_by = a.id
+        WHERE b.id = ?
     ");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -619,37 +617,37 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             </div>
 
                             <div class="date-reservations">
-                                <?php foreach ($date_reservations as $reservation):
-                                    $start_time = date('g:i A', strtotime($reservation['start_time']));
-                                    $end_time = date('g:i A', strtotime($reservation['end_time']));
+                                <?php foreach ($date_reservations as $res):
+                                    $start_time = date('g:i A', strtotime($res['start_time']));
+                                    $end_time = date('g:i A', strtotime($res['end_time']));
                                 ?>
-                                    <div class="reservation-card status-<?php echo $reservation['status']; ?>">
+                                    <div class="reservation-card status-<?php echo $res['status']; ?>">
                                         <div class="res-card-left">
-                                            <div class="res-status-indicator <?php echo $reservation['status']; ?>"></div>
+                                            <div class="res-status-indicator <?php echo $res['status']; ?>"></div>
                                             <div class="res-card-info">
                                                 <div class="res-card-top">
-                                                    <span class="res-id">#<?php echo $reservation['id']; ?></span>
-                                                    <span class="status-badge <?php echo $reservation['status']; ?>">
-                                                        <?php echo ucfirst($reservation['status']); ?>
+                                                    <span class="res-id">#<?php echo $res['id']; ?></span>
+                                                    <span class="status-badge <?php echo $res['status']; ?>">
+                                                        <?php echo ucfirst($res['status']); ?>
                                                     </span>
                                                 </div>
-                                                <h4 class="res-customer"><?php echo htmlspecialchars($reservation['full_name']); ?></h4>
+                                                <h4 class="res-customer"><?php echo htmlspecialchars($res['full_name']); ?></h4>
                                                 <div class="res-details-row">
                                                     <span class="res-detail">
                                                         <i class="fas fa-envelope"></i>
-                                                        <?php echo htmlspecialchars($reservation['email']); ?>
+                                                        <?php echo htmlspecialchars($res['email']); ?>
                                                     </span>
                                                     <span class="res-detail">
                                                         <i class="fas fa-phone"></i>
-                                                        <?php echo htmlspecialchars($reservation['phone']); ?>
+                                                        <?php echo htmlspecialchars($res['phone']); ?>
                                                     </span>
                                                 </div>
                                                 <div class="res-details-row">
                                                     <span class="res-detail">
                                                         <i class="fas fa-calendar-check"></i>
-                                                        <?php echo htmlspecialchars($reservation['event_name']); ?>
-                                                        <?php if (!empty($reservation['event_title'])): ?>
-                                                            — <?php echo htmlspecialchars($reservation['event_title']); ?>
+                                                        <?php echo htmlspecialchars($res['event_name']); ?>
+                                                        <?php if (!empty($res['event_title'])): ?>
+                                                            — <?php echo htmlspecialchars($res['event_title']); ?>
                                                         <?php endif; ?>
                                                     </span>
                                                     <span class="res-detail">
@@ -658,49 +656,49 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                     </span>
                                                     <span class="res-detail">
                                                         <i class="fas fa-users"></i>
-                                                        <?php echo $reservation['persons']; ?> guest<?php echo $reservation['persons'] > 1 ? 's' : ''; ?>
+                                                        <?php echo $res['persons']; ?> guest<?php echo $res['persons'] > 1 ? 's' : ''; ?>
                                                     </span>
                                                 </div>
                                                 <div class="res-details-row">
                                                     <span class="res-detail">
                                                         <i class="fas fa-credit-card"></i>
-                                                        <?php echo $reservation['payment_method']; ?>
-                                                        <span class="payment-status <?php echo $reservation['payment_status']; ?>">
-                                                            <?php echo ucfirst($reservation['payment_status']); ?>
+                                                        <?php echo $res['payment_method']; ?>
+                                                        <span class="payment-status <?php echo $res['payment_status']; ?>">
+                                                            <?php echo ucfirst($res['payment_status']); ?>
                                                         </span>
                                                     </span>
-                                                    <?php if (($reservation['status'] == 'approved' || $reservation['status'] == 'completed') && !empty($reservation['admin_name'])): ?>
+                                                    <?php if (($res['status'] == 'approved' || $res['status'] == 'completed') && !empty($res['admin_name'])): ?>
                                                         <span class="res-detail">
                                                             <i class="fas fa-user-check"></i>
-                                                            Approved by <?php echo $reservation['admin_name']; ?>
+                                                            Approved by <?php echo $res['admin_name']; ?>
                                                         </span>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="res-card-actions">
-                                            <a href="?id=<?php echo $reservation['id']; ?>" class="btn-card-action view" title="View Details">
+                                            <a href="?id=<?php echo $res['id']; ?>" class="btn-card-action view" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <?php if ($reservation['status'] == 'pending'): ?>
-                                                <?php if ($reservation['payment_status'] !== 'paid'): ?>
-                                                    <a href="?action=mark_paid&id=<?php echo $reservation['id']; ?>" class="btn-card-action approve" title="Mark as Paid"
+                                            <?php if ($res['status'] == 'pending'): ?>
+                                                <?php if ($res['payment_status'] !== 'paid'): ?>
+                                                    <a href="?action=mark_paid&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Mark as Paid"
                                                        onclick="return confirm('Mark this reservation as paid?')">
                                                         <i class="fas fa-money-bill-wave"></i>
                                                     </a>
                                                 <?php else: ?>
-                                                    <a href="?action=approve&id=<?php echo $reservation['id']; ?>" class="btn-card-action approve" title="Approve"
+                                                    <a href="?action=approve&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Approve"
                                                        onclick="return confirm('Approve this reservation?')">
                                                         <i class="fas fa-check"></i>
                                                     </a>
                                                 <?php endif; ?>
-                                                <a href="?action=reject&id=<?php echo $reservation['id']; ?>" class="btn-card-action reject" title="Reject"
+                                                <a href="?action=reject&id=<?php echo $res['id']; ?>" class="btn-card-action reject" title="Reject"
                                                    onclick="return confirm('Reject this reservation?')">
                                                     <i class="fas fa-times"></i>
                                                 </a>
                                             <?php endif; ?>
-                                            <?php if ($reservation['status'] == 'approved'): ?>
-                                                <a href="?action=cancel&id=<?php echo $reservation['id']; ?>" class="btn-card-action cancel" title="Cancel"
+                                            <?php if ($res['status'] == 'approved'): ?>
+                                                <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel"
                                                    onclick="return confirm('Cancel this reservation?')">
                                                     <i class="fas fa-ban"></i>
                                                 </a>

@@ -14,10 +14,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please enter both your Reservation ID and Email address.';
     } else {
         $stmt = $conn->prepare("
-            SELECT r.*, e.name as event_base_name
-            FROM reservations r
-            JOIN events e ON r.event_id = e.id
-            WHERE r.id = ? AND r.email = ?
+            SELECT b.*, c.full_name, c.email, c.phone, c.company,
+                   p.payment_method, p.payment_status, p.total_price,
+                   e.name as event_base_name
+            FROM bookings b
+            JOIN customers c ON b.customer_id = c.id
+            JOIN payments p ON p.booking_id = b.id
+            JOIN events e ON b.event_id = e.id
+            WHERE b.id = ? AND c.email = ?
         ");
         $stmt->bind_param("is", $ref_id, $email);
         $stmt->execute();

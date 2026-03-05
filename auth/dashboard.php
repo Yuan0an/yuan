@@ -11,57 +11,60 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 $stats = [];
 
 // Total reservations
-$result = $conn->query("SELECT COUNT(*) as total FROM reservations");
+$result = $conn->query("SELECT COUNT(*) as total FROM bookings");
 $stats['total_reservations'] = $result->fetch_assoc()['total'];
 
 // Pending reservations
-$result = $conn->query("SELECT COUNT(*) as total FROM reservations WHERE status = 'pending'");
+$result = $conn->query("SELECT COUNT(*) as total FROM bookings WHERE status = 'pending'");
 $stats['pending'] = $result->fetch_assoc()['total'];
 
 // Approved reservations
-$result = $conn->query("SELECT COUNT(*) as total FROM reservations WHERE status = 'approved'");
+$result = $conn->query("SELECT COUNT(*) as total FROM bookings WHERE status = 'approved'");
 $stats['approved'] = $result->fetch_assoc()['total'];
 
 // Today's reservations
 $today = date('Y-m-d');
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM reservations WHERE booking_date = ?");
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM bookings WHERE booking_date = ?");
 $stmt->bind_param("s", $today);
 $stmt->execute();
 $stats['today'] = $stmt->get_result()->fetch_assoc()['total'];
 
 // Recent reservations (last 7 days)
 $week_ago = date('Y-m-d', strtotime('-7 days'));
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM reservations WHERE created_at >= ?");
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM bookings WHERE created_at >= ?");
 $stmt->bind_param("s", $week_ago);
 $stmt->execute();
 $stats['recent'] = $stmt->get_result()->fetch_assoc()['total'];
 
 // Get recent pending reservations
 $recent_pending = $conn->query("
-    SELECT r.*, e.name as event_name 
-    FROM reservations r 
-    JOIN events e ON r.event_id = e.id 
-    WHERE r.status = 'pending' 
-    ORDER BY r.created_at DESC 
+    SELECT b.*, e.name as event_name, c.full_name, c.email 
+    FROM bookings b 
+    JOIN events e ON b.event_id = e.id 
+    JOIN customers c ON b.customer_id = c.id
+    WHERE b.status = 'pending' 
+    ORDER BY b.created_at DESC 
     LIMIT 5
 ");
 
 // Get today's reservations
 $today_reservations = $conn->query("
-    SELECT r.*, e.name as event_name 
-    FROM reservations r 
-    JOIN events e ON r.event_id = e.id 
-    WHERE r.booking_date = '$today' AND r.status = 'approved'
-    ORDER BY r.start_time ASC
+    SELECT b.*, e.name as event_name, c.full_name 
+    FROM bookings b 
+    JOIN events e ON b.event_id = e.id 
+    JOIN customers c ON b.customer_id = c.id
+    WHERE b.booking_date = '$today' AND b.status = 'approved'
+    ORDER BY b.start_time ASC
 ");
 
 // Get upcoming reservations
 $upcoming_reservations = $conn->query("
-    SELECT r.*, e.name as event_name 
-    FROM reservations r 
-    JOIN events e ON r.event_id = e.id 
-    WHERE r.booking_date > '$today' AND r.status = 'approved'
-    ORDER BY r.booking_date ASC, r.start_time ASC
+    SELECT b.*, e.name as event_name, c.full_name 
+    FROM bookings b 
+    JOIN events e ON b.event_id = e.id 
+    JOIN customers c ON b.customer_id = c.id
+    WHERE b.booking_date > '$today' AND b.status = 'approved'
+    ORDER BY b.booking_date ASC, b.start_time ASC
     LIMIT 5
 ");
 ?>

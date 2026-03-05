@@ -16,7 +16,7 @@ $event = $stmt->get_result()->fetch_assoc();
 // Check for approved reservations (block the slot)
 $stmt = $conn->prepare("
     SELECT COUNT(*) as approved_count 
-    FROM reservations 
+    FROM bookings 
     WHERE event_id = ? 
     AND booking_date = ?
     AND start_time = ?
@@ -89,7 +89,7 @@ function check_db_conflict($conn, $event_ids, $check_date)
     $placeholders = implode(',', array_fill(0, count($event_ids), '?'));
     $types = str_repeat('i', count($event_ids)) . 's'; // ids... then date string
 
-    $sql = "SELECT COUNT(*) as count FROM reservations 
+    $sql = "SELECT COUNT(*) as count FROM bookings 
             WHERE event_id IN ($placeholders) 
             AND booking_date = ? 
             AND status = 'approved'";
@@ -127,7 +127,7 @@ if ($approved_result['approved_count'] > 0) {
 // Count pending reservations
 $stmt = $conn->prepare("
     SELECT COUNT(*) as pending_count 
-    FROM reservations 
+    FROM bookings 
     WHERE event_id = ? 
     AND booking_date = ?
     AND start_time = ?

@@ -20,16 +20,17 @@ $start_date = "$year-$month-01";
 $end_date = date('Y-m-t', strtotime($start_date));
 
 $query = "
-    SELECT r.booking_date, r.start_time, r.end_time, r.persons, 
-           r.full_name, r.status, e.name as event_name, e.id as event_id
-    FROM reservations r
-    JOIN events e ON r.event_id = e.id
-    WHERE r.booking_date BETWEEN ? AND ?
-    AND r.status IN ('approved', 'pending')
+    SELECT b.booking_date, b.start_time, b.end_time, b.persons, 
+           c.full_name, b.status, e.name as event_name, e.id as event_id
+    FROM bookings b
+    JOIN customers c ON b.customer_id = c.id
+    JOIN events e ON b.event_id = e.id
+    WHERE b.booking_date BETWEEN ? AND ?
+    AND b.status IN ('approved', 'pending')
 ";
 
 if ($selected_event > 0) {
-    $query .= " AND r.event_id = ?";
+    $query .= " AND b.event_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("ssi", $start_date, $end_date, $selected_event);
 } else {
