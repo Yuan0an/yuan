@@ -126,27 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $conn->commit();
 
-        // ── Send Response Early ──────────────────────────────────────────
-        ignore_user_abort(true);
-        ob_start();
-        echo json_encode([
-            'success' => true,
-            'reservation_id' => $booking_id, // Keeping key name for frontend compatibility
-            'message' => 'Reservation request submitted successfully!'
-        ]);
-        $size = ob_get_length();
-        header("Content-Length: $size");
-        header("Connection: close");
-        ob_end_flush();
-        flush();
-
-        // Close connection to browser early so the user doesn't wait for the email
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-        // ────────────────────────────────────────────────────────────────
-
-        // ── Send booking confirmation email in "background" ────────────────
+        // ── Send booking confirmation email ────────────────────────────────
+        // We do this BEFORE the JSON response to ensure it executes, 
+        // but PHPMailer has a 10s timeout so it won't hang forever.
+        
         // Fetch event name from the events table to derive the tour type
         $ev_stmt = $conn->prepare("SELECT name, is_overnight FROM events WHERE id = ? LIMIT 1");
         $ev_stmt->bind_param("i", $event_id);
@@ -155,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $tour_type  = $ev_row ? $ev_row['name']        : 'N/A';
         $is_overnight = $ev_row ? (bool)$ev_row['is_overnight'] : false;
 
-        sendBookingConfirmationEmail(
+        $email_sent = sendBookingConfirmationEmail(
             $booking_id,
             $email,
             $full_name,
@@ -169,6 +152,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $is_overnight
         );
         // ────────────────────────────────────────────────────────────────
+
+        echo json_encode([
+            'success' => true,
+            'reservation_id' => $booking_id, // Keeping key name for frontend compatibility
+            'message' => 'Reservation request submitted successfully!' . ($email_sent ? '' : ' (Email delivery delayed)')
+        ]);
 
     } catch (Exception $e) {
         $conn->rollback();

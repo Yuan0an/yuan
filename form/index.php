@@ -433,7 +433,6 @@ $result = $conn->query($sql);
             // Load calendar
             function loadCalendar() {
                 if (!selectedEventId) {
-                    alert('Please select an event first');
                     return;
                 }
 
@@ -591,8 +590,7 @@ $result = $conn->query($sql);
                 selectedDate = null;
             }
 
-            // Initial load
-            loadCalendar();
+            // Initial load deleted - user must select event type first
         });
 
         // Add-on Helper Functions (Global Scope)
