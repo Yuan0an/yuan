@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "functions": {
     "**/*.php": {
       "runtime": "vercel-php@0.7.1"
