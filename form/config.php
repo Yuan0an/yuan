@@ -1,10 +1,11 @@
 <?php
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$dbname = 'resort_db';
+$host = getenv('MYSQLHOST') ?: (getenv('DB_HOST') ?: 'localhost');
+$user = getenv('MYSQLUSER') ?: (getenv('DB_USER') ?: 'root');
+$pass = getenv('MYSQLPASSWORD') ?: (getenv('DB_PASS') ?: '');
+$dbname = getenv('MYSQLDATABASE') ?: (getenv('DB_NAME') ?: 'resort_db');
+$port = getenv('MYSQLPORT') ?: (getenv('DB_PORT') ?: 3306);
 
-$conn = new mysqli($host, $user, $pass, $dbname);
+$conn = new mysqli($host, $user, $pass, $dbname, $port);
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);

@@ -1,16 +1,17 @@
 <?php
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$dbname = 'resort_db';
+$host = getenv('MYSQLHOST') ?: (getenv('DB_HOST') ?: 'localhost');
+$user = getenv('MYSQLUSER') ?: (getenv('DB_USER') ?: 'root');
+$pass = getenv('MYSQLPASSWORD') ?: (getenv('DB_PASS') ?: '');
+$dbname = getenv('MYSQLDATABASE') ?: (getenv('DB_NAME') ?: 'resort_db');
+$port = getenv('MYSQLPORT') ?: (getenv('DB_PORT') ?: 3306);
 
 // Enable error reporting for debugging
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {
-    $conn = new mysqli($host, $user, $pass, $dbname);
+    $conn = new mysqli($host, $user, $pass, $dbname, $port);
 } catch (mysqli_sql_exception $e) {
-    die("Database Connection Error: " . $e->getMessage() . "<br><br><b>Troubleshooting Tip:</b> Ensure you have run the database setup script provided in the implementation plan.");
+    die("Database Connection Error: " . $e->getMessage() . "<br><br><b>Troubleshooting Tip:</b> Ensure you have configured the production database credentials.");
 }
 
 // Set session save path to a writable directory
