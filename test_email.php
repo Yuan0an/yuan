@@ -17,21 +17,32 @@ $is_overnight = false;
 echo "<h2>📧 Email Delivery Test</h2>";
 echo "Attempting to send test email to: <strong>$test_email</strong>...<br>";
 
-// We'll temporarily modify getMailer() in config.php to show debug output if needed, 
-// but first let's just try the call.
-$result = sendBookingConfirmationEmail(
-    $booking_id,
-    $test_email,
-    $guest_name,
-    $event_title,
-    $event_type,
-    $tour_type,
-    $guests,
-    $booking_date,
-    $start_time,
-    $end_time,
-    $is_overnight
-);
+// Enable Debugging in PHPMailer via global if needed, but since we use getMailer(),
+// we'll temporarily hack a debug toggle here by re-getting the mailer or modifying the existing one.
+function getDebugMailer() {
+    require_once 'auto_email/config.php';
+    $mail = getMailer();
+    $mail->SMTPDebug = 2; // Enable verbose debug output
+    $mail->Debugoutput = 'html';
+    return $mail;
+}
+
+// Custom call instead of sendBookingConfirmationEmail to see output
+try {
+    $mail = getDebugMailer();
+    $mail->addAddress($test_email, $guest_name);
+    $mail->Subject = 'Debug Delivery Test';
+    $mail->Body    = "This is a test email with full SMTP debug enabled.\n\n" . 
+                     "Reference: $booking_id\n" .
+                     "Date: $booking_date";
+    
+    echo "<h4>📡 SMTP Debug Output:</h4><div style='background:#eee;padding:10px;border:1px solid #ccc;'>";
+    $result = $mail->send();
+    echo "</div>";
+} catch (Exception $e) {
+    echo "</div><h4 style='color:red;'>Caught Exception: " . $e->getMessage() . "</h4>";
+    $result = false;
+}
 
 if ($result) {
     echo "<h3 style='color:green;'>✅ Success! Check your inbox/spam folder.</h3>";
