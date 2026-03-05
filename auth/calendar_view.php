@@ -20,7 +20,7 @@ $start_date = "$year-$month-01";
 $end_date = date('Y-m-t', strtotime($start_date));
 
 $query = "
-    SELECT b.booking_date, b.start_time, b.end_time, b.persons, 
+    SELECT b.booking_date, b.start_time, b.end_time, b.persons, b.reservation_id,
            c.full_name, b.status, e.name as event_name, e.id as event_id
     FROM bookings b
     JOIN customers c ON b.customer_id = c.id
@@ -245,14 +245,15 @@ if ($next_month > 12) {
                         $events_today = [];
                         foreach ($reservations_today as $res) {
                             $event_name = htmlspecialchars($res['event_name']);
+                            $res_id = htmlspecialchars($res['reservation_id']);
                             $status = $res['status'];
                             $time = date('g:i A', strtotime($res['start_time']));
                             $persons = $res['persons'];
 
-                            if (!in_array($event_name, $events_today)) {
-                                $events_today[] = $event_name;
+                            if (!in_array($res_id, $events_today)) {
+                                $events_today[] = $res_id;
                                 echo "<div class='event-item $status'>";
-                                echo "<strong>$event_name</strong><br>";
+                                echo "<strong>#$res_id</strong> $event_name<br>";
                                 echo "<small>$time • $persons pax</small>";
                                 echo "</div>";
                             }
