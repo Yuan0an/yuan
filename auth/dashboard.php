@@ -38,10 +38,11 @@ $stats['recent'] = $stmt->get_result()->fetch_assoc()['total'];
 
 // Get recent pending reservations
 $recent_pending = $conn->query("
-    SELECT b.*, e.name as event_name, c.full_name, c.email 
+    SELECT b.*, e.name as event_name, c.full_name, c.email, p.payment_status 
     FROM bookings b 
     JOIN events e ON b.event_id = e.id 
     JOIN customers c ON b.customer_id = c.id
+    LEFT JOIN payments p ON b.id = p.booking_id
     WHERE b.status = 'pending' 
     ORDER BY b.created_at DESC 
     LIMIT 5
