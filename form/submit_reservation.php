@@ -126,16 +126,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $conn->commit();
 
+        // ── Send Response Early ──────────────────────────────────────────
+        ignore_user_abort(true);
+        ob_start();
         echo json_encode([
             'success' => true,
             'reservation_id' => $booking_id, // Keeping key name for frontend compatibility
             'message' => 'Reservation request submitted successfully!'
         ]);
+        $size = ob_get_length();
+        header("Content-Length: $size");
+        header("Connection: close");
+        ob_end_flush();
+        flush();
 
         // Close connection to browser early so the user doesn't wait for the email
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         }
+        // ────────────────────────────────────────────────────────────────
 
         // ── Send booking confirmation email in "background" ────────────────
         // Fetch event name from the events table to derive the tour type
