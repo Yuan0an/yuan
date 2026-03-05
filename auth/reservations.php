@@ -141,6 +141,16 @@ if (!empty($date_to)) {
     $types .= 's';
 }
 
+// Search by ID/Name/Email
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+if (!empty($search)) {
+    $query .= " AND (b.reservation_id LIKE ? OR c.full_name LIKE ? OR c.email LIKE ?)";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+    $types .= 'sss';
+}
+
 $query .= " ORDER BY b.booking_date ASC, b.start_time ASC";
 
 // Get reservations
@@ -350,7 +360,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                         <span class="status-badge <?php echo $single_reservation['status']; ?>">
                             <?php echo ucfirst($single_reservation['status']); ?>
                         </span>
-                        <h2>Reservation #<?php echo $single_reservation['id']; ?></h2>
+                        <h2>Reservation #<?php echo $single_reservation['reservation_id']; ?></h2>
                         <p><i class="far fa-clock"></i> Booked on <?php echo date('F j, Y', strtotime($single_reservation['created_at'])); ?></p>
                     </div>
                     <div class="header-right">
@@ -534,6 +544,11 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             <input type="date" name="date_to" value="<?php echo $date_to; ?>" onchange="this.form.submit()">
                         </div>
 
+                        <div class="filter-group" style="flex: 1; min-width: 200px;">
+                            <label><i class="fas fa-search"></i> Search ID/Guest</label>
+                            <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Reservation ID, Name, or Email" onchange="this.form.submit()">
+                        </div>
+
                         <div class="filter-group">
                             <button type="button" onclick="window.location.href='reservations.php'" class="btn-reset">
                                 <i class="fas fa-redo"></i> Reset
@@ -635,7 +650,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                             <div class="res-status-indicator <?php echo $res['status']; ?>"></div>
                                             <div class="res-card-info">
                                                 <div class="res-card-top">
-                                                    <span class="res-id">#<?php echo $res['id']; ?></span>
+                                                    <span class="res-id">#<?php echo $res['reservation_id']; ?></span>
                                                     <span class="status-badge <?php echo $res['status']; ?>">
                                                         <?php echo ucfirst($res['status']); ?>
                                                     </span>

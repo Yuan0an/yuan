@@ -198,7 +198,7 @@ $upcoming_reservations = $conn->query("
                     <tbody class="table-body">
                         <?php while ($reservation = $recent_pending->fetch_assoc()): ?>
                             <tr>
-                                <td>#<?php echo $reservation['id']; ?></td>
+                                <td>#<?php echo $reservation['reservation_id']; ?></td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($reservation['full_name']); ?></strong><br>
                                     <small><?php echo htmlspecialchars($reservation['email']); ?></small>

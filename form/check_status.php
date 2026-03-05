@@ -7,10 +7,10 @@ $searched = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $searched = true;
-    $ref_id = intval($_POST['ref_id'] ?? 0);
+    $ref_id = trim($_POST['ref_id'] ?? '');
     $email = trim($_POST['email'] ?? '');
 
-    if ($ref_id <= 0 || empty($email)) {
+    if (empty($ref_id) || empty($email)) {
         $error = 'Please enter both your Reservation ID and Email address.';
     } else {
         $stmt = $conn->prepare("
@@ -21,9 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             JOIN customers c ON b.customer_id = c.id
             JOIN payments p ON p.booking_id = b.id
             JOIN events e ON b.event_id = e.id
-            WHERE b.id = ? AND c.email = ?
+            WHERE b.reservation_id = ? AND c.email = ?
         ");
-        $stmt->bind_param("is", $ref_id, $email);
+        $stmt->bind_param("ss", $ref_id, $email);
         $stmt->execute();
         $result = $stmt->get_result();
         $reservation = $result->fetch_assoc();
@@ -88,7 +88,7 @@ $addon_names = [
                         <label for="ref_id">
                             <i class="fas fa-hashtag"></i> Reservation ID
                         </label>
-                        <input type="number" id="ref_id" name="ref_id" placeholder="e.g. 1024"
+                        <input type="text" id="ref_id" name="ref_id" placeholder="e.g. 54321"
                             value="<?php echo isset($_POST['ref_id']) ? htmlspecialchars($_POST['ref_id']) : ''; ?>">
                     </div>
                     <div class="cs-form-group">
@@ -334,7 +334,7 @@ $addon_names = [
                             If you have already made your downpayment, please upload a screenshot of your receipt here for verification.
                         </p>
                         <?php 
-                        $_GET['res_id'] = $reservation['id'];
+                        $_GET['res_id'] = $reservation['reservation_id'];
                         include '../uploader/index.php'; 
                         ?>
                     </div>

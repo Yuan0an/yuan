@@ -13,6 +13,8 @@ echo '<pre>';
 $migrations = [
     "Add receipt_data column to payments" =>
         "ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_data LONGTEXT",
+    "Add reservation_id column to bookings" =>
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reservation_id VARCHAR(10) UNIQUE",
 ];
 
 $all_ok = true;

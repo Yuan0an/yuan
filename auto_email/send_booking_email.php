@@ -7,22 +7,22 @@ require_once __DIR__ . '/config.php';
  * Sends a Booking Reservation Confirmation email to the guest
  * after a successful reservation is saved to the database.
  *
- * @param int    $booking_id     The auto-generated booking ID (reference number)
- * @param string $guest_email    Guest's email address
- * @param string $guest_name     Guest's full name
- * @param string $event_title    The event/function name entered by the guest
- * @param string $event_type     e.g. Birthday, Wedding, Corporate
- * @param string $tour_type      e.g. Day Tour, Night Tour, Overnight Stay
- * @param int    $guests         Number of expected guests
- * @param string $booking_date   Reservation date (YYYY-MM-DD)
- * @param string $start_time     Session start time (HH:MM:SS)
- * @param string $end_time       Session end time (HH:MM:SS)
- * @param bool   $is_overnight   Whether the event spans overnight
+ * @param string $reservation_id  The 5-digit random reservation ID
+ * @param string $guest_email     Guest's email address
+ * @param string $guest_name      Guest's full name
+ * @param string $event_title     The event/function name entered by the guest
+ * @param string $event_type      e.g. Birthday, Wedding, Corporate
+ * @param string $tour_type       e.g. Day Tour, Night Tour, Overnight Stay
+ * @param int    $guests          Number of expected guests
+ * @param string $booking_date    Reservation date (YYYY-MM-DD)
+ * @param string $start_time      Session start time (HH:MM:SS)
+ * @param string $end_time        Session end time (HH:MM:SS)
+ * @param bool   $is_overnight    Whether the event spans overnight
  *
  * @return bool  true on success, false on failure
  */
 function sendBookingConfirmationEmail(
-    $booking_id,
+    $reservation_id,
     $guest_email,
     $guest_name,
     $event_title,
@@ -56,8 +56,8 @@ function sendBookingConfirmationEmail(
         $booking_date_display = date('F j, Y', strtotime($booking_date));
         $today_display        = date('F j, Y');
 
-        // Padded reference number, e.g. CK-000042
-        $ref_number = 'CK-' . str_pad($booking_id, 6, '0', STR_PAD_LEFT);
+        // Reference number for email
+        $ref_number = $reservation_id;
 
         // ----------------------------------------------------------------
         // Email content - Simplified (No CSS)

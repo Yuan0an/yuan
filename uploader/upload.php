@@ -4,10 +4,10 @@
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['receipt'])) {
-    $res_id = isset($_POST['res_id']) ? intval($_POST['res_id']) : 0;
+    $res_id_input = isset($_POST['res_id']) ? trim($_POST['res_id']) : '';
 
-    if ($res_id <= 0) {
-        echo json_encode(['success' => false, 'error' => 'Invalid reservation ID.']);
+    if (empty($res_id_input)) {
+        echo json_encode(['success' => false, 'error' => 'No reservation ID provided.']);
         exit;
     }
 
@@ -53,7 +53,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['receipt'])) {
             }
         }
 
-        $ref_name = 'receipt_' . $res_id . '.' . $file_ext;
+        // LOOKUP internal ID from reservation_id
+        $findBooking = $conn->prepare("SELECT id FROM bookings WHERE reservation_id = ? LIMIT 1");
+        $findBooking->bind_param("s", $res_id_input);
+        $findBooking->execute();
+        $bookingResult = $findBooking->get_result();
+        
+        if ($bookingResult->num_rows === 0) {
+            // Fallback: check if it's an internal ID (for backward compatibility during transition)
+            $res_id = intval($res_id_input);
+            $checkInternal = $conn->prepare("SELECT id FROM bookings WHERE id = ? LIMIT 1");
+            $checkInternal->bind_param("i", $res_id);
+            $checkInternal->execute();
+            if ($checkInternal->get_result()->num_rows === 0) {
+                throw new Exception("Reservation not found: " . $res_id_input);
+            }
+        } else {
+            $res_id = $bookingResult->fetch_assoc()['id'];
+        }
+
+        $ref_name = 'receipt_' . $res_id_input . '.' . $file_ext;
 
         $stmt = $conn->prepare("
             UPDATE payments

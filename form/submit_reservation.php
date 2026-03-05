@@ -89,19 +89,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // 3. Start Transaction logic (or sequential with error handling)
+    // 3. Start Transaction logic
     $conn->begin_transaction();
 
     try {
+        // Generate a unique 5-digit reservation_id
+        $reservation_id = '';
+        $is_unique = false;
+        $max_attempts = 10;
+        $attempts = 0;
+
+        while (!$is_unique && $attempts < $max_attempts) {
+            $temp_id = strval(rand(10000, 99999));
+            $check_id_stmt = $conn->prepare("SELECT id FROM bookings WHERE reservation_id = ? LIMIT 1");
+            $check_id_stmt->bind_param("s", $temp_id);
+            $check_id_stmt->execute();
+            if ($check_id_stmt->get_result()->num_rows === 0) {
+                $reservation_id = $temp_id;
+                $is_unique = true;
+            }
+            $attempts++;
+        }
+
+        if (!$is_unique) {
+            throw new Exception("Could not generate a unique reservation ID.");
+        }
+
         // Insert into bookings
         $booking_stmt = $conn->prepare("
             INSERT INTO bookings (
                 customer_id, event_id, booking_date, start_time, end_time, 
-                persons, status, event_title, event_type, addons_json
-            ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+                persons, status, event_title, event_type, addons_json, reservation_id
+            ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
         ");
         $booking_stmt->bind_param(
-            "iisssisss",
+            "iisssissss",
             $customer_id,
             $event_id,
             $booking_date,
@@ -110,7 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $guests,
             $event_title,
             $event_type,
-            $addons_json
+            $addons_json,
+            $reservation_id
         );
         $booking_stmt->execute();
         $booking_id = $conn->insert_id;
@@ -139,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $is_overnight = $ev_row ? (bool)$ev_row['is_overnight'] : false;
 
         $email_sent = sendBookingConfirmationEmail(
-            $booking_id,
+            $reservation_id,
             $email,
             $full_name,
             $event_title,
@@ -155,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         echo json_encode([
             'success' => true,
-            'reservation_id' => $booking_id, // Keeping key name for frontend compatibility
+            'reservation_id' => $reservation_id, // Now using the physical reservation_id string
             'message' => 'Reservation request submitted successfully!' . ($email_sent ? '' : ' (Email delivery delayed)')
         ]);
 

@@ -6,7 +6,7 @@ if (!isset($_GET['id'])) {
     exit;
 }
 
-$reservation_id = intval($_GET['id']);
+$res_id = $_GET['id'];
 
 // Fetch reservation details from the correct tables
 $stmt = $conn->prepare("
@@ -18,9 +18,9 @@ $stmt = $conn->prepare("
     JOIN customers  c ON b.customer_id = c.id
     JOIN payments   p ON p.booking_id  = b.id
     JOIN events     e ON b.event_id    = e.id
-    WHERE b.id = ?
+    WHERE b.reservation_id = ?
 ");
-$stmt->bind_param("i", $reservation_id);
+$stmt->bind_param("s", $res_id);
 $stmt->execute();
 $reservation = $stmt->get_result()->fetch_assoc();
 
@@ -255,7 +255,7 @@ $addon_names = [
             <div class="summary-header">
                 <h2>Reservation Details</h2>
                 <div class="ref-number">Ref: #
-                    <?php echo $reservation_id; ?>
+                    <?php echo $res_id; ?>
                 </div>
             </div>
 
@@ -364,7 +364,7 @@ $addon_names = [
                     <h3 style="text-align: center; color: #333;"><i class="fas fa-file-invoice"></i> Upload Payment Receipt</h3>
                     <?php 
                     // Set the reservation ID for the uploader
-                    $_GET['res_id'] = $reservation_id;
+                    $_GET['res_id'] = $res_id;
                     include '../uploader/index.php'; 
                     ?>
                 </div>

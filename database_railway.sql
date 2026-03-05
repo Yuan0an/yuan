@@ -59,6 +59,7 @@ CREATE TABLE bookings (
     approved_at DATETIME,
     admin_notes TEXT,
     addons_json TEXT,
+    reservation_id VARCHAR(10) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
