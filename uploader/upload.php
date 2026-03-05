@@ -31,9 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['receipt'])) {
     if (move_uploaded_file($file['tmp_name'], $target_path)) {
         // Update database with image details and set payment_status to paid
         require_once '../form/config.php';
-        $stmt = $conn->prepare("UPDATE reservations SET image_name = ?, image_path = ?, time_uploaded = NOW(), payment_status = 'paid' WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE payments SET payment_proof = ?, time_uploaded = NOW(), payment_status = 'paid' WHERE booking_id = ?");
         $db_path = 'uploader/' . $target_path;
-        $stmt->bind_param("ssi", $new_filename, $db_path, $res_id);
+        $stmt->bind_param("si", $db_path, $res_id);
         $stmt->execute();
 
         echo json_encode(['success' => true, 'filename' => $new_filename]);
