@@ -14,19 +14,22 @@ if ($conn->connect_error) {
 // 🛡️ SELF-HEALING DATABASE: Ensure critical columns exist.
 // This handles cases where migrate.php was not run or failed on Railway.
 try {
+    // Helper function to add column if not exists
+    $ensureColumn = function($table, $column, $definition) use ($conn) {
+        $check = $conn->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+        if ($check && $check->num_rows === 0) {
+            $conn->query("ALTER TABLE `$table` ADD COLUMN $column $definition");
+        }
+    };
+
     // Check bookings table
-    $check_res = $conn->query("SHOW COLUMNS FROM bookings LIKE 'reservation_id'");
-    if ($check_res && $check_res->num_rows === 0) {
-        $conn->query("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS addons_json TEXT");
-        $conn->query("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reservation_id VARCHAR(10) UNIQUE");
-    }
+    $ensureColumn('bookings', 'addons_json', 'TEXT');
+    $ensureColumn('bookings', 'reservation_id', 'VARCHAR(10) UNIQUE');
     
     // Check payments table
-    $check_pay = $conn->query("SHOW COLUMNS FROM payments LIKE 'receipt_data'");
-    if ($check_pay && $check_pay->num_rows === 0) {
-        $conn->query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_data LONGTEXT");
-        $conn->query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS time_uploaded TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-    }
+    $ensureColumn('payments', 'receipt_data', 'LONGTEXT');
+    $ensureColumn('payments', 'time_uploaded', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+    
 } catch (Exception $e) {
     // Silently continue; let actual query errors reveal deeper issues if the ADD COLUMN fails
 }
