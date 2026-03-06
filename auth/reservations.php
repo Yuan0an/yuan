@@ -110,9 +110,10 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 // ── Send Approval Notification Email ──────────────────────────
                 // Fetch details for the email
                 $details_stmt = $conn->prepare("
-                    SELECT b.reservation_id, b.booking_date, b.start_time, b.event_title, c.email, c.full_name 
+                    SELECT b.reservation_id, b.booking_date, b.start_time, b.end_time, b.event_title, b.event_type, b.persons, c.email, c.full_name, e.name as tour_type, e.is_overnight
                     FROM bookings b 
                     JOIN customers c ON b.customer_id = c.id 
+                    JOIN events e ON b.event_id = e.id
                     WHERE b.id = ?
                 ");
                 $details_stmt->bind_param("i", $id);
@@ -120,17 +121,28 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 $details = $details_stmt->get_result()->fetch_assoc();
 
                 if ($details) {
-                    require_once __DIR__ . '/../auto_email/send_booking_email.php';
-                        sendBookingApprovalEmail(
-                            $details['reservation_id'],
-                            $details['email'],
-                            $details['full_name'],
-                            $details['event_title'],
-                            $details['booking_date'],
-                            $details['start_time'],
-                            false,
-                            10 // 10s timeout for admin approval
-                        );
+                    // Format dates for the email
+                    $checkin_display = date('F j, Y', strtotime($details['booking_date'])) . ' at ' . date('g:i A', strtotime($details['start_time']));
+                    
+                    if ($details['is_overnight']) {
+                        $checkout_date = date('Y-m-d', strtotime($details['booking_date'] . ' +1 day'));
+                    } else {
+                        $checkout_date = $details['booking_date'];
+                    }
+                    $checkout_display = date('F j, Y', strtotime($checkout_date)) . ' at ' . date('g:i A', strtotime($details['end_time']));
+
+                    require_once __DIR__ . '/../email_api/send_approved_email.php';
+                    sendApprovedEmail(
+                        $details['email'],
+                        $details['reservation_id'],
+                        $details['event_title'],
+                        $details['event_type'],
+                        $details['tour_type'],
+                        $details['persons'],
+                        $checkin_display,
+                        $checkout_display,
+                        'Approved'
+                    );
                 }
                 // ─────────────────────────────────────────────────────────────
 
@@ -157,6 +169,43 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ? AND status = 'pending'");
             $stmt->bind_param("i", $id);
             $stmt->execute();
+
+            // ── Send Rejection Notification Email ──────────────────────────
+            $details_stmt = $conn->prepare("
+                SELECT b.reservation_id, b.booking_date, b.start_time, b.end_time, b.event_title, b.event_type, b.persons, c.email, c.full_name, e.name as tour_type, e.is_overnight
+                FROM bookings b 
+                JOIN customers c ON b.customer_id = c.id 
+                JOIN events e ON b.event_id = e.id
+                WHERE b.id = ?
+            ");
+            $details_stmt->bind_param("i", $id);
+            $details_stmt->execute();
+            $details = $details_stmt->get_result()->fetch_assoc();
+
+            if ($details) {
+                $checkin_display = date('F j, Y', strtotime($details['booking_date'])) . ' at ' . date('g:i A', strtotime($details['start_time']));
+                if ($details['is_overnight']) {
+                    $checkout_date = date('Y-m-d', strtotime($details['booking_date'] . ' +1 day'));
+                } else {
+                    $checkout_date = $details['booking_date'];
+                }
+                $checkout_display = date('F j, Y', strtotime($checkout_date)) . ' at ' . date('g:i A', strtotime($details['end_time']));
+
+                require_once __DIR__ . '/../email_api/send_rejected_email.php';
+                sendRejectedEmail(
+                    $details['email'],
+                    $details['reservation_id'],
+                    $details['event_title'],
+                    $details['event_type'],
+                    $details['tour_type'],
+                    $details['persons'],
+                    $checkin_display,
+                    $checkout_display,
+                    'Rejected'
+                );
+            }
+            // ─────────────────────────────────────────────────────────────
+
             $_SESSION['message'] = 'Reservation rejected';
             break;
 

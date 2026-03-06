@@ -167,8 +167,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         // ── Send booking confirmation email (Background-ish) ────────────────
-        // If fastcgi_finish_request was called, the user already has the JSON.
-        // If not, they'll wait for this, but only for 5 seconds max.
         
         // Fetch event name from the events table to derive the tour type
         $ev_stmt = $conn->prepare("SELECT name, is_overnight FROM events WHERE id = ? LIMIT 1");
@@ -178,20 +176,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $tour_type  = $ev_row ? $ev_row['name']        : 'N/A';
         $is_overnight = $ev_row ? (bool)$ev_row['is_overnight'] : false;
 
-        sendBookingConfirmationEmail(
-            $reservation_id,
+        // Format dates for the email
+        $checkin_display = date('F j, Y', strtotime($booking_date)) . ' at ' . date('g:i A', strtotime($start_time));
+        
+        if ($is_overnight) {
+            $checkout_date = date('Y-m-d', strtotime($booking_date . ' +1 day'));
+        } else {
+            $checkout_date = $booking_date;
+        }
+        $checkout_display = date('F j, Y', strtotime($checkout_date)) . ' at ' . date('g:i A', strtotime($end_time));
+
+        require_once __DIR__ . '/../email_api/send_booking_receipt.php';
+        sendBookingReceipt(
             $email,
-            $full_name,
+            $reservation_id,
             $event_title,
             $event_type,
             $tour_type,
             $guests,
-            $booking_date,
-            $start_time,
-            $end_time,
-            $is_overnight,
-            false, // echo_debug
-            5      // 5 second fast timeout for user-facing submission
+            $checkin_display,
+            $checkout_display,
+            'Pending'
         );
         // ────────────────────────────────────────────────────────────────
 
