@@ -120,6 +120,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 $details_stmt->execute();
                 $details = $details_stmt->get_result()->fetch_assoc();
 
+                /*
                 if ($details) {
                     // Format dates for the email
                     $checkin_display = date('F j, Y', strtotime($details['booking_date'])) . ' at ' . date('g:i A', strtotime($details['start_time']));
@@ -144,6 +145,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                         'Approved'
                     );
                 }
+                */
                 // ─────────────────────────────────────────────────────────────
 
                 $refund_count   = count($refund_ids ?? []);
@@ -182,6 +184,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             $details_stmt->execute();
             $details = $details_stmt->get_result()->fetch_assoc();
 
+            /*
             if ($details) {
                 $checkin_display = date('F j, Y', strtotime($details['booking_date'])) . ' at ' . date('g:i A', strtotime($details['start_time']));
                 if ($details['is_overnight']) {
@@ -204,6 +207,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                     'Rejected'
                 );
             }
+            */
             // ─────────────────────────────────────────────────────────────
 
             $_SESSION['message'] = 'Reservation rejected';

@@ -186,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         $checkout_display = date('F j, Y', strtotime($checkout_date)) . ' at ' . date('g:i A', strtotime($end_time));
 
+        /*
         require_once __DIR__ . '/../email_api/send_booking_receipt.php';
         sendBookingReceipt(
             $email,
@@ -198,6 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $checkout_display,
             'Pending'
         );
+        */
         // ────────────────────────────────────────────────────────────────
 
         // If fastcgi_finish_request was NOT called, we need to echo the response here.
