@@ -53,7 +53,7 @@ $recent_pending = $conn->query("
     LEFT JOIN payments p ON b.id = p.booking_id
     WHERE b.status = 'pending' 
     ORDER BY b.created_at DESC 
-    LIMIT 5
+    LIMIT 10
 ");
 
 // Get today's reservations
@@ -74,7 +74,7 @@ $upcoming_reservations = $conn->query("
     JOIN customers c ON b.customer_id = c.id
     WHERE b.booking_date > '$today' AND b.status = 'approved'
     ORDER BY b.booking_date ASC, b.start_time ASC
-    LIMIT 3
+    LIMIT 10
 ");
 ?>
 
