@@ -121,14 +121,16 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 
                 if ($details) {
                     require_once __DIR__ . '/../auto_email/send_booking_email.php';
-                    sendBookingApprovalEmail(
-                        $details['reservation_id'],
-                        $details['email'],
-                        $details['full_name'],
-                        $details['event_title'],
-                        $details['booking_date'],
-                        $details['start_time']
-                    );
+                        sendBookingApprovalEmail(
+                            $details['reservation_id'],
+                            $details['email'],
+                            $details['full_name'],
+                            $details['event_title'],
+                            $details['booking_date'],
+                            $details['start_time'],
+                            false,
+                            10 // 10s timeout for admin approval
+                        );
                 }
                 // ─────────────────────────────────────────────────────────────
 

@@ -4,7 +4,7 @@ use PHPMailer\PHPMailer\Exception;
 
 require 'vendor/autoload.php';
 
-function getMailer($echo_debug = false) {
+function getMailer($echo_debug = false, $timeout = 10) {
 
     $mail = new PHPMailer(true);
 
@@ -22,7 +22,7 @@ function getMailer($echo_debug = false) {
     $mail->SMTPSecure = 'ssl'; 
     $mail->Port       = 465;
 
-    $mail->Timeout    = 60; // Increased timeout to 60s
+    $mail->Timeout    = $timeout; 
     $mail->SMTPConnectFilter = null; // Ensure no filters block connection
     
     // Log debug info to server's error log or echo it for the test tool

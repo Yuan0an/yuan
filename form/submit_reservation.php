@@ -149,9 +149,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $conn->commit();
 
-        // ── Send booking confirmation email ────────────────────────────────
-        // We do this BEFORE the JSON response to ensure it executes, 
-        // but PHPMailer has a 10s timeout so it won't hang forever.
+        // ── Non-Blocking Response Preparation ──────────────────────────────
+        // We want to send the success JSON to the user immediately so they don't wait for SMTP.
+        $response = json_encode([
+            'success' => true,
+            'reservation_id' => $reservation_id,
+            'message' => 'Reservation request submitted successfully!'
+        ]);
+
+        // If running under FastCGI (like many XAMPP/Cloud setups), we can close the connection
+        if (function_exists('fastcgi_finish_request')) {
+            echo $response;
+            fastcgi_finish_request();
+        } else {
+            // Fallback: Just let the script continue. We'll set a shorter 5s timeout for the email
+            // to ensure it doesn't hang the process too long if the connection is slow.
+        }
+        
+        // ── Send booking confirmation email (Background-ish) ────────────────
+        // If fastcgi_finish_request was called, the user already has the JSON.
+        // If not, they'll wait for this, but only for 5 seconds max.
         
         // Fetch event name from the events table to derive the tour type
         $ev_stmt = $conn->prepare("SELECT name, is_overnight FROM events WHERE id = ? LIMIT 1");
@@ -161,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $tour_type  = $ev_row ? $ev_row['name']        : 'N/A';
         $is_overnight = $ev_row ? (bool)$ev_row['is_overnight'] : false;
 
-        $email_sent = sendBookingConfirmationEmail(
+        sendBookingConfirmationEmail(
             $reservation_id,
             $email,
             $full_name,
@@ -172,15 +189,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $booking_date,
             $start_time,
             $end_time,
-            $is_overnight
+            $is_overnight,
+            false, // echo_debug
+            5      // 5 second fast timeout for user-facing submission
         );
         // ────────────────────────────────────────────────────────────────
 
-        echo json_encode([
-            'success' => true,
-            'reservation_id' => $reservation_id, // Now using the physical reservation_id string
-            'message' => 'Reservation request submitted successfully!' . ($email_sent ? '' : ' (Email delivery delayed)')
-        ]);
+        // If fastcgi_finish_request was NOT called, we need to echo the response here.
+        if (!function_exists('fastcgi_finish_request')) {
+            echo $response;
+        }
+        exit;
 
     } catch (Exception $e) {
         $conn->rollback();

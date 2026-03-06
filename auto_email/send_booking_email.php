@@ -33,10 +33,11 @@ function sendBookingConfirmationEmail(
     $start_time,
     $end_time,
     $is_overnight = false,
-    $echo_debug = false
+    $echo_debug = false,
+    $timeout = 10
 ) {
     try {
-        $mail = getMailer($echo_debug);
+        $mail = getMailer($echo_debug, $timeout);
 
         // Recipient
         $mail->addAddress($guest_email, $guest_name);
@@ -113,10 +114,11 @@ function sendBookingApprovalEmail(
     $event_title,
     $booking_date,
     $start_time,
-    $echo_debug = false
+    $echo_debug = false,
+    $timeout = 10
 ) {
     try {
-        $mail = getMailer($echo_debug);
+        $mail = getMailer($echo_debug, $timeout);
 
         // Recipient
         $mail->addAddress($guest_email, $guest_name);
