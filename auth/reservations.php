@@ -300,7 +300,7 @@ $query = "
            e.name as event_name, a.full_name as admin_name
     FROM bookings b
     JOIN customers c ON b.customer_id = c.id
-    JOIN payments p ON p.booking_id = b.id
+    LEFT JOIN payments p ON p.booking_id = b.id
     JOIN events e ON b.event_id = e.id
     LEFT JOIN admins a ON b.approved_by = a.id
     WHERE 1=1
