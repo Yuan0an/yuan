@@ -214,7 +214,7 @@ $addon_names = [
         }
 
         .btn-print {
-            background: #444;
+            background: #292929ff;
         }
 
         .btn-home {

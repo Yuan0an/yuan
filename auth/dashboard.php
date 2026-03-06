@@ -74,7 +74,7 @@ $upcoming_reservations = $conn->query("
     JOIN customers c ON b.customer_id = c.id
     WHERE b.booking_date > '$today' AND b.status = 'approved'
     ORDER BY b.booking_date ASC, b.start_time ASC
-    LIMIT 5
+    LIMIT 3
 ");
 ?>
 
