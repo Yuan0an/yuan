@@ -101,6 +101,20 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             $stmt->execute();
             $_SESSION['message'] = 'Reservation cancelled';
             break;
+
+        case 'mark_refund':
+            $stmt = $conn->prepare("UPDATE bookings SET status = 'for_refund' WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $_SESSION['message'] = 'Reservation marked for refund';
+            break;
+
+        case 'refund_done':
+            $stmt = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ? AND status = 'for_refund'");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $_SESSION['message'] = 'Refund completed. Reservation archived.';
+            break;
     }
 
     header('Location: reservations.php' . (isset($_GET['id']) && !isset($_GET['action']) ? '?id=' . $id : ''));
@@ -540,6 +554,9 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                 <a href="reservations.php?status=completed" class="status-tab completed-tab <?php echo $status == 'completed' ? 'active' : ''; ?>">
                     <i class="fas fa-flag-checkered"></i> Completed
                 </a>
+                <a href="reservations.php?status=for_refund" class="status-tab refund-tab <?php echo $status == 'for_refund' ? 'active' : ''; ?>">
+                    <i class="fas fa-undo-alt"></i> For Refund
+                </a>
             </div>
 
             <!-- Filters -->
@@ -622,12 +639,14 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                         $date_completed = 0;
                         $date_rejected = 0;
                         $date_cancelled = 0;
+                        $date_refund = 0;
                         foreach ($date_reservations as $r) {
                             if ($r['status'] === 'pending') $date_pending++;
                             elseif ($r['status'] === 'approved') $date_approved++;
                             elseif ($r['status'] === 'completed') $date_completed++;
                             elseif ($r['status'] === 'rejected') $date_rejected++;
                             elseif ($r['status'] === 'cancelled') $date_cancelled++;
+                            elseif ($r['status'] === 'for_refund') $date_refund++;
                         }
                     ?>
                         <div class="date-group <?php echo $is_today ? 'today' : ($is_past ? 'past' : ''); ?>">
@@ -662,6 +681,9 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                     <?php endif; ?>
                                     <?php if ($date_cancelled > 0): ?>
                                         <span class="mini-badge cancelled-mini"><?php echo $date_cancelled; ?> cancelled</span>
+                                    <?php endif; ?>
+                                    <?php if ($date_refund > 0): ?>
+                                        <span class="mini-badge refund-mini"><?php echo $date_refund; ?> for refund</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -751,6 +773,18 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                 <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel"
                                                    onclick="return confirm('Cancel this reservation?')">
                                                     <i class="fas fa-ban"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <?php if ($res['status'] == 'cancelled' || $res['status'] == 'completed'): ?>
+                                                <a href="?action=mark_refund&id=<?php echo $res['id']; ?>" class="btn-card-action refund" title="Mark for Refund"
+                                                   onclick="return confirm('Mark this reservation for refund?')">
+                                                    <i class="fas fa-undo-alt"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <?php if ($res['status'] == 'for_refund'): ?>
+                                                <a href="?action=refund_done&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Refund Done"
+                                                   onclick="return confirm('Mark refund as completed?')">
+                                                    <i class="fas fa-check-double"></i>
                                                 </a>
                                             <?php endif; ?>
                                         </div>
