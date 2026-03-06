@@ -186,7 +186,9 @@ if ($next_month > 12) {
         </div>
 
         <!-- Calendar -->
-        <div class="admin-calendar">
+        <div class="admin-calendar" 
+             data-month-prefix="<?php echo date("F ", strtotime("$year-$month-01")); ?>"
+             data-year-suffix="<?php echo date(", Y", strtotime("$year-$month-01")); ?>">
             <div class="calendar-header">
                 <div class="day-header">Sunday</div>
                 <div class="day-header">Monday</div>
@@ -291,40 +293,7 @@ if ($next_month > 12) {
         </div>
     </div>
 
-    <script>
-        // Day click handler
-        document.querySelectorAll('.calendar-day:not(.empty)').forEach(function (day) {
-            day.addEventListener('click', function () {
-                const date = '<?php echo date("F j, Y", strtotime("$year-$month-")); ?>' +
-                    this.querySelector('.day-number').textContent;
-                const reservations = this.querySelector('.day-reservations');
-
-                document.getElementById('modalDate').textContent = 'Bookings for ' + date;
-
-                if (reservations) {
-                    document.getElementById('modalContent').innerHTML = reservations.innerHTML;
-                } else {
-                    document.getElementById('modalContent').innerHTML =
-                        '<p>No bookings for this date.</p>';
-                }
-
-                document.getElementById('dayDetails').style.display = 'block';
-            });
-        });
-
-        // Close modal
-        document.querySelector('.close').addEventListener('click', function () {
-            document.getElementById('dayDetails').style.display = 'none';
-        });
-
-        // Close modal when clicking outside
-        window.addEventListener('click', function (event) {
-            const modal = document.getElementById('dayDetails');
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        });
-    </script>
+    <script src="js/calendar.js"></script>
 </body>
 
 </html>
