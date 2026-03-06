@@ -373,7 +373,7 @@ $addon_names = [
         </div>
 
         <div class="action-buttons">
-            <button onclick="window.print()" class="btn-btn-print"><i class="fas fa-print"></i> Print Summary</button>
+            <button onclick="window.print()" class="btn btn-print"><i class="fas fa-print"></i> Print Summary</button>
             <a href="check_status.php" class="btn btn-home" style="background:#3b82f6"><i class="fas fa-search"></i> Check Status</a>
             <a href="/index.php" class="btn btn-home"><i class="fas fa-home"></i> Back to Home</a>
         </div>
