@@ -754,24 +754,20 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                             </a>
                                             <?php if ($res['status'] == 'pending'): ?>
                                                 <?php if ($res['payment_status'] !== 'paid'): ?>
-                                                    <a href="?action=mark_paid&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Mark as Paid"
-                                                       onclick="return confirm('Mark this reservation as paid?')">
+                                                    <a href="?action=mark_paid&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Mark as Paid">
                                                         <i class="fas fa-money-bill-wave"></i>
                                                     </a>
                                                 <?php else: ?>
-                                                    <a href="?action=approve&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Approve"
-                                                       onclick="return confirm('Approve this reservation?')">
+                                                    <a href="?action=approve&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Approve">
                                                         <i class="fas fa-check"></i>
                                                     </a>
                                                 <?php endif; ?>
-                                                <a href="?action=reject&id=<?php echo $res['id']; ?>" class="btn-card-action reject" title="Reject"
-                                                   onclick="return confirm('Reject this reservation?')">
+                                                <a href="?action=reject&id=<?php echo $res['id']; ?>" class="btn-card-action reject" title="Reject">
                                                     <i class="fas fa-times"></i>
                                                 </a>
                                             <?php endif; ?>
                                             <?php if ($res['status'] == 'approved'): ?>
-                                                <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel"
-                                                   onclick="return confirm('Cancel this reservation?')">
+                                                <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel">
                                                     <i class="fas fa-ban"></i>
                                                 </a>
                                             <?php endif; ?>

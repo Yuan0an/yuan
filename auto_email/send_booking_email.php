@@ -93,9 +93,9 @@ function sendBookingConfirmationEmail(
         return true;
 
     } catch (Exception $e) {
-        // Log silently — booking is NOT affected by email failure
+        $error_msg = isset($mail) ? $mail->ErrorInfo : $e->getMessage();
         error_log('[CK Resort Email] Failed to send booking confirmation to '
-                  . $guest_email . ': ' . $e->getMessage());
+                  . $guest_email . ': ' . $error_msg);
         return false;
     }
 }
@@ -144,8 +144,9 @@ function sendBookingApprovalEmail(
         return true;
 
     } catch (Exception $e) {
+        $error_msg = isset($mail) ? $mail->ErrorInfo : $e->getMessage();
         error_log('[CK Resort Email] Failed to send approval notification to '
-                  . $guest_email . ': ' . $e->getMessage());
+                  . $guest_email . ': ' . $error_msg);
         return false;
     }
 }
