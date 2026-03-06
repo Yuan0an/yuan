@@ -318,6 +318,11 @@ a:hover {
     color: var(--danger);
 }
 
+.stat-card.rejected .stat-icon {
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--text-muted);
+}
+
 .stat-card.refund {
     background: #fff7ed;
     border-left: 4px solid #f97316;

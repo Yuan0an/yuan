@@ -161,10 +161,31 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             break;
 
         case 'cancel':
-            $stmt = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ?");
             $stmt->bind_param("i", $id);
             $stmt->execute();
-            $_SESSION['message'] = 'Reservation cancelled';
+            $_SESSION['message'] = 'Reservation moved to Rejected/Cancelled';
+            break;
+
+        case 'reject_payment':
+            $conn->begin_transaction();
+            try {
+                // Set booking to rejected
+                $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected', admin_notes = CONCAT(IFNULL(admin_notes,''), '\n[SYSTEM: Payment rejected as fake/invalid]') WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+
+                // Set payment to rejected
+                $stmt2 = $conn->prepare("UPDATE payments SET payment_status = 'rejected' WHERE booking_id = ?");
+                $stmt2->bind_param("i", $id);
+                $stmt2->execute();
+
+                $conn->commit();
+                $_SESSION['message'] = 'Payment rejected and reservation moved to Rejected/Cancelled';
+            } catch (Exception $e) {
+                $conn->rollback();
+                $_SESSION['error'] = 'Error rejecting payment: ' . $e->getMessage();
+            }
             break;
 
         case 'mark_refund':
@@ -182,7 +203,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 $stmt->bind_param("i", $id);
                 $stmt->execute();
                 
-                $stmt2 = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?");
+                $stmt2 = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ?");
                 $stmt2->bind_param("i", $id);
                 $stmt2->execute();
                 
@@ -237,6 +258,9 @@ $types = '';
 
 if ($status == 'refunded') {
     $query .= " AND p.payment_status = 'refunded'";
+} elseif ($status == 'rejected') {
+    // Show both 'rejected' status AND 'cancelled' (for legacy) but exclude refunded
+    $query .= " AND (b.status IN ('rejected', 'cancelled')) AND p.payment_status != 'refunded'";
 } elseif ($status != 'all') {
     $query .= " AND b.status = ?";
     $params[] = $status;
@@ -534,9 +558,9 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                         <span class="status-badge <?php echo $single_reservation['status']; ?>">
                             <?php echo ucfirst($single_reservation['status'] == 'for_refund' ? 'Refund Pending' : $single_reservation['status']); ?>
                         </span>
-                        <?php if (in_array($single_reservation['status'], ['cancelled', 'rejected']) && $single_reservation['payment_status'] == 'paid'): ?>
-                            <span class="status-badge refund-pending">
-                                Refund Pending
+                        <?php if ($single_reservation['payment_status'] == 'rejected'): ?>
+                            <span class="status-badge rejected">
+                                Payment Rejected (Fake)
                             </span>
                         <?php endif; ?>
                         <h2>Reservation #<?php echo $single_reservation['reservation_id']; ?></h2>
@@ -574,6 +598,12 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                 <a href="?action=mark_refunded&id=<?php echo $single_reservation['id']; ?>" class="dropdown-item refund"
                                     onclick="return confirm('Mark this reservation as refunded?')">
                                     <i class="fas fa-undo"></i> Mark as Refunded
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($single_reservation['payment_status'] == 'paid' || $single_reservation['status'] == 'pending'): ?>
+                                <a href="?action=reject_payment&id=<?php echo $single_reservation['id']; ?>" class="dropdown-item reject"
+                                    onclick="return confirm('REJECT this payment as fake/invalid? This will cancel the reservation without refund.')">
+                                    <i class="fas fa-file-invoice-dollar"></i> Reject Payment (Fake)
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -691,10 +721,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                     <i class="fas fa-check-circle"></i> Approved
                 </a>
                 <a href="reservations.php?status=rejected" class="status-tab rejected-tab <?php echo $status == 'rejected' ? 'active' : ''; ?>">
-                    <i class="fas fa-times-circle"></i> Rejected
-                </a>
-                <a href="reservations.php?status=cancelled" class="status-tab cancelled-tab <?php echo $status == 'cancelled' ? 'active' : ''; ?>">
-                    <i class="fas fa-ban"></i> Cancelled
+                    <i class="fas fa-times-circle"></i> Rejected / Cancelled
                 </a>
                 <a href="reservations.php?status=completed" class="status-tab completed-tab <?php echo $status == 'completed' ? 'active' : ''; ?>">
                     <i class="fas fa-flag-checkered"></i> Completed
@@ -793,8 +820,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             if ($r['status'] === 'pending') $date_pending++;
                             elseif ($r['status'] === 'approved') $date_approved++;
                             elseif ($r['status'] === 'completed') $date_completed++;
-                            elseif ($r['status'] === 'rejected') $date_rejected++;
-                            elseif ($r['status'] === 'cancelled' && $r['payment_status'] !== 'refunded') $date_cancelled++;
+                            elseif ($r['status'] === 'rejected' || $r['status'] === 'cancelled' && $r['payment_status'] !== 'refunded') $date_rejected++;
                             elseif ($r['status'] === 'for_refund') $date_refund++;
                             elseif ($r['payment_status'] === 'refunded') $date_refunded++;
                         }
@@ -827,10 +853,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                         <span class="mini-badge completed-mini"><?php echo $date_completed; ?> completed</span>
                                     <?php endif; ?>
                                     <?php if ($date_rejected > 0): ?>
-                                        <span class="mini-badge rejected-mini"><?php echo $date_rejected; ?> rejected</span>
-                                    <?php endif; ?>
-                                    <?php if ($date_cancelled > 0): ?>
-                                        <span class="mini-badge cancelled-mini"><?php echo $date_cancelled; ?> cancelled</span>
+                                        <span class="mini-badge rejected-mini"><?php echo $date_rejected; ?> rejected/cancelled</span>
                                     <?php endif; ?>
                                     <?php if ($date_refund > 0): ?>
                                         <span class="mini-badge refund-mini"><?php echo $date_refund; ?> for refund</span>
@@ -855,7 +878,11 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                     <span class="status-badge <?php echo $res['status']; ?>">
                                                         <?php echo ucfirst($res['status'] == 'for_refund' ? 'refund pending' : $res['status']); ?>
                                                     </span>
-                                                    <?php if (in_array($res['status'], ['cancelled', 'rejected']) && $res['payment_status'] == 'paid'): ?>
+                                                    <?php if ($res['payment_status'] == 'rejected'): ?>
+                                                        <span class="status-badge rejected">
+                                                            Payment Rejected
+                                                        </span>
+                                                    <?php elseif (in_array($res['status'], ['cancelled', 'rejected']) && $res['payment_status'] == 'paid'): ?>
                                                         <span class="status-badge refund-pending">
                                                             Refund Pending
                                                         </span>
@@ -932,6 +959,12 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                             <?php elseif ($res['status'] == 'approved' || ($res['status'] == 'pending' && $res['payment_status'] == 'paid')): ?>
                                                 <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel & Refund Later">
                                                     <i class="fas fa-ban"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <?php if ($res['payment_status'] == 'paid' || $res['status'] == 'pending'): ?>
+                                                <a href="?action=reject_payment&id=<?php echo $res['id']; ?>" class="btn-card-action reject" title="Reject Payment (Fake)"
+                                                   onclick="return confirm('Reject this payment as fake?')">
+                                                    <i class="fas fa-file-invoice-dollar"></i>
                                                 </a>
                                             <?php endif; ?>
                                         </div>

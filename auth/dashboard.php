@@ -29,8 +29,8 @@ $stmt->bind_param("s", $today);
 $stmt->execute();
 $stats['today'] = $stmt->get_result()->fetch_assoc()['total'];
 
-// Pending Refunds (Cancelled/Rejected but Paid, or For Refund)
-$result = $conn->query("SELECT COUNT(*) as total FROM bookings b JOIN payments p ON b.id = p.booking_id WHERE (b.status IN ('cancelled', 'rejected') AND p.payment_status = 'paid') OR b.status = 'for_refund'");
+// Pending Refunds (Rejected/Cancelled but Paid, or For Refund) - Excludes fake payments
+$result = $conn->query("SELECT COUNT(*) as total FROM bookings b JOIN payments p ON b.id = p.booking_id WHERE (b.status IN ('rejected', 'cancelled') AND p.payment_status = 'paid') OR b.status = 'for_refund'");
 $stats['pending_refunds'] = $result->fetch_assoc()['total'];
 
 // Total Refunded
@@ -158,6 +158,20 @@ $upcoming_reservations = $conn->query("
                 <div class="stat-info">
                     <h3><?php echo $stats['pending']; ?></h3>
                     <p>Pending Approval</p>
+                </div>
+            </div>
+
+            <div class="stat-card rejected">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <?php
+                    $res_rejected = $conn->query("SELECT COUNT(*) as total FROM bookings WHERE status IN ('rejected', 'cancelled')");
+                    $rejected_count = $res_rejected->fetch_assoc()['total'];
+                    ?>
+                    <h3><?php echo $rejected_count; ?></h3>
+                    <p>Rejected / Cancelled</p>
                 </div>
             </div>
 
@@ -351,9 +365,9 @@ $upcoming_reservations = $conn->query("
                         <i class="fas fa-clock"></i>
                         <span>Review Pending (<?php echo $stats['pending']; ?>)</span>
                     </a>
-                    <a href="reservations.php" class="btn-quick all">
-                        <i class="fas fa-list"></i>
-                        <span>View All Reservations</span>
+                    <a href="reservations.php?status=rejected" class="btn-quick all">
+                        <i class="fas fa-times-circle"></i>
+                        <span>View Rejected/Cancelled</span>
                     </a>
                     <a href="calendar_view.php" class="btn-quick calendar">
                         <i class="fas fa-calendar-alt"></i>
