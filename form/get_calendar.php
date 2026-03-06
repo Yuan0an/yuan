@@ -155,7 +155,7 @@ for ($day = 1; $day <= $days_in_month; $day++) {
     // Check if BLOCKED BY CONFLICT (Different Event)
     else if (in_array($date_str, $conflict_blocked_dates)) {
         $class .= ' approved';
-        $status = 'Unavailable';
+        $status = 'Booked';
     }
     // Check for pending reservations
     else {

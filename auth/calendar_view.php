@@ -244,8 +244,8 @@ if ($next_month > 12) {
                         // Show event names
                         $events_today = [];
                         foreach ($reservations_today as $res) {
-                            $event_name = htmlspecialchars($res['event_name']);
-                            $res_id = htmlspecialchars($res['reservation_id']);
+                            $event_name = htmlspecialchars($res['event_name'] ?? '');
+                            $res_id = htmlspecialchars($res['reservation_id'] ?? '');
                             $status = $res['status'];
                             $time = date('g:i A', strtotime($res['start_time']));
                             $persons = $res['persons'];
