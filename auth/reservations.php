@@ -406,6 +406,57 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
         .btn-back:hover {
             color: var(--accent);
         }
+
+        /* Flash Message / Toast Styles */
+        .alert-flash {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-lg);
+            background: #fff;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-left: 4px solid var(--cs-success);
+            max-width: 400px;
+        }
+
+        .alert-flash.alert-error {
+            border-left-color: var(--danger);
+        }
+
+        .alert-flash i {
+            font-size: 1.25rem;
+            color: var(--cs-success);
+        }
+
+        .alert-flash.alert-error i {
+            color: var(--danger);
+        }
+
+        .alert-flash .message-content {
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 0.9375rem;
+        }
+
+        .alert-flash.fade-out {
+            animation: fadeOutDown 0.5s ease forwards;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOutDown {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(20px); opacity: 0; }
+        }
     </style>
 </head>
 
@@ -457,18 +508,21 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
         </header>
 
         <?php if (isset($_SESSION['message'])): ?>
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> <?php echo $_SESSION['message']; ?>
+            <div class="alert-flash alert-success">
+                <i class="fas fa-check-circle"></i>
+                <div class="message-content"><?php echo $_SESSION['message']; ?></div>
                 <?php unset($_SESSION['message']); ?>
             </div>
         <?php endif; ?>
 
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger" style="background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca;">
-                <i class="fas fa-exclamation-circle"></i> <?php echo $_SESSION['error']; ?>
+            <div class="alert-flash alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <div class="message-content"><?php echo $_SESSION['error']; ?></div>
                 <?php unset($_SESSION['error']); ?>
             </div>
         <?php endif; ?>
+
 
         <?php if (isset($single_reservation)): ?>
             <!-- Single Reservation View -->
@@ -902,11 +956,14 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
             }
         }
 
-        // Auto-hide success message after 5 seconds
+        // Auto-hide success message after 5 seconds with fade animation
         setTimeout(function () {
-            var alerts = document.querySelectorAll('.alert-success');
+            var alerts = document.querySelectorAll('.alert-flash');
             alerts.forEach(function (alert) {
-                alert.style.display = 'none';
+                alert.classList.add('fade-out');
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 500);
             });
         }, 5000);
 
