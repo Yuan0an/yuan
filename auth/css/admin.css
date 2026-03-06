@@ -318,6 +318,20 @@ a:hover {
     color: var(--danger);
 }
 
+.stat-card.refund {
+    background: #fff7ed;
+    border-left: 4px solid #f97316;
+}
+
+.stat-card.refund .stat-icon {
+    background: transparent;
+    color: #f97316;
+}
+
+.stat-card.refund .stat-info h3 {
+    color: #c2410c;
+}
+
 .stat-info h3 {
     font-size: 2rem;
     margin-bottom: 0.25rem;
@@ -411,6 +425,17 @@ a:hover {
 .status-badge.rejected {
     background: rgba(239, 68, 68, 0.1);
     color: var(--danger);
+}
+
+.status-badge.refund-pending {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fdba74;
+}
+
+.status-badge.refunded {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
 }
 
 .status-badge.for_refund {

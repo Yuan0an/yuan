@@ -175,10 +175,23 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             break;
 
         case 'refund_done':
-            $stmt = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ? AND status = 'for_refund'");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-            $_SESSION['message'] = 'Refund completed. Reservation archived.';
+        case 'mark_refunded':
+            $conn->begin_transaction();
+            try {
+                $stmt = $conn->prepare("UPDATE payments SET payment_status = 'refunded' WHERE booking_id = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                
+                $stmt2 = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?");
+                $stmt2->bind_param("i", $id);
+                $stmt2->execute();
+                
+                $conn->commit();
+                $_SESSION['message'] = 'Reservation marked as refunded';
+            } catch (Exception $e) {
+                $conn->rollback();
+                $_SESSION['error'] = 'Error processing refund: ' . $e->getMessage();
+            }
             break;
     }
 
@@ -463,8 +476,13 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                 <div class="detail-header">
                     <div class="header-left">
                         <span class="status-badge <?php echo $single_reservation['status']; ?>">
-                            <?php echo ucfirst($single_reservation['status']); ?>
+                            <?php echo ucfirst($single_reservation['status'] == 'for_refund' ? 'Refund Pending' : $single_reservation['status']); ?>
                         </span>
+                        <?php if (in_array($single_reservation['status'], ['cancelled', 'rejected']) && $single_reservation['payment_status'] == 'paid'): ?>
+                            <span class="status-badge refund-pending">
+                                Refund Pending
+                            </span>
+                        <?php endif; ?>
                         <h2>Reservation #<?php echo $single_reservation['reservation_id']; ?></h2>
                         <p><i class="far fa-clock"></i> Booked on <?php echo date('F j, Y', strtotime($single_reservation['created_at'])); ?></p>
                     </div>
@@ -494,6 +512,12 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                 <a href="?action=cancel&id=<?php echo $single_reservation['id']; ?>" class="dropdown-item cancel"
                                     onclick="return confirm('Cancel this reservation?')">
                                     <i class="fas fa-ban"></i> Cancel
+                                </a>
+                            <?php endif; ?>
+                            <?php if (($single_reservation['status'] == 'for_refund') || (in_array($single_reservation['status'], ['cancelled', 'rejected']) && $single_reservation['payment_status'] == 'paid')): ?>
+                                <a href="?action=mark_refunded&id=<?php echo $single_reservation['id']; ?>" class="dropdown-item refund"
+                                    onclick="return confirm('Mark this reservation as refunded?')">
+                                    <i class="fas fa-undo"></i> Mark as Refunded
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -765,8 +789,13 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                 <div class="res-card-top">
                                                     <span class="res-id">#<?php echo $res['reservation_id']; ?></span>
                                                     <span class="status-badge <?php echo $res['status']; ?>">
-                                                        <?php echo ucfirst($res['status']); ?>
+                                                        <?php echo ucfirst($res['status'] == 'for_refund' ? 'refund pending' : $res['status']); ?>
                                                     </span>
+                                                    <?php if (in_array($res['status'], ['cancelled', 'rejected']) && $res['payment_status'] == 'paid'): ?>
+                                                        <span class="status-badge refund-pending">
+                                                            Refund Pending
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <h4 class="res-customer"><?php echo htmlspecialchars($res['full_name'] ?? ''); ?></h4>
                                                 <div class="res-details-row">
@@ -831,21 +860,14 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                     <i class="fas fa-times"></i>
                                                 </a>
                                             <?php endif; ?>
-                                            <?php if ($res['status'] == 'approved'): ?>
-                                                <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel">
-                                                    <i class="fas fa-ban"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                            <?php if ($res['status'] == 'cancelled' || $res['status'] == 'completed'): ?>
-                                                <a href="?action=mark_refund&id=<?php echo $res['id']; ?>" class="btn-card-action refund" title="Mark for Refund"
-                                                   onclick="return confirm('Mark this reservation for refund?')">
-                                                    <i class="fas fa-undo-alt"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                            <?php if ($res['status'] == 'for_refund'): ?>
-                                                <a href="?action=refund_done&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Refund Done"
-                                                   onclick="return confirm('Mark refund as completed?')">
+                                            <?php if (($res['status'] == 'for_refund') || (in_array($res['status'], ['cancelled', 'rejected']) && $res['payment_status'] == 'paid')): ?>
+                                                <a href="?action=mark_refunded&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Mark as Refunded"
+                                                   onclick="return confirm('Mark this refund as completed?')">
                                                     <i class="fas fa-check-double"></i>
+                                                </a>
+                                            <?php elseif ($res['status'] == 'approved' || ($res['status'] == 'pending' && $res['payment_status'] == 'paid')): ?>
+                                                <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel & Refund Later">
+                                                    <i class="fas fa-ban"></i>
                                                 </a>
                                             <?php endif; ?>
                                         </div>
