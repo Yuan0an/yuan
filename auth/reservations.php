@@ -235,7 +235,9 @@ $query = "
 $params = [];
 $types = '';
 
-if ($status != 'all') {
+if ($status == 'refunded') {
+    $query .= " AND p.payment_status = 'refunded'";
+} elseif ($status != 'all') {
     $query .= " AND b.status = ?";
     $params[] = $status;
     $types .= 's';
@@ -700,6 +702,9 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                 <a href="reservations.php?status=for_refund" class="status-tab refund-tab <?php echo $status == 'for_refund' ? 'active' : ''; ?>">
                     <i class="fas fa-undo-alt"></i> For Refund
                 </a>
+                <a href="reservations.php?status=refunded" class="status-tab refunded-tab <?php echo $status == 'refunded' ? 'active' : ''; ?>">
+                    <i class="fas fa-undo"></i> Refunded
+                </a>
             </div>
 
             <!-- Filters -->
@@ -783,13 +788,15 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                         $date_rejected = 0;
                         $date_cancelled = 0;
                         $date_refund = 0;
+                        $date_refunded = 0;
                         foreach ($date_reservations as $r) {
                             if ($r['status'] === 'pending') $date_pending++;
                             elseif ($r['status'] === 'approved') $date_approved++;
                             elseif ($r['status'] === 'completed') $date_completed++;
                             elseif ($r['status'] === 'rejected') $date_rejected++;
-                            elseif ($r['status'] === 'cancelled') $date_cancelled++;
+                            elseif ($r['status'] === 'cancelled' && $r['payment_status'] !== 'refunded') $date_cancelled++;
                             elseif ($r['status'] === 'for_refund') $date_refund++;
+                            elseif ($r['payment_status'] === 'refunded') $date_refunded++;
                         }
                     ?>
                         <div class="date-group <?php echo $is_today ? 'today' : ($is_past ? 'past' : ''); ?>">
@@ -827,6 +834,9 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                     <?php endif; ?>
                                     <?php if ($date_refund > 0): ?>
                                         <span class="mini-badge refund-mini"><?php echo $date_refund; ?> for refund</span>
+                                    <?php endif; ?>
+                                    <?php if ($date_refunded > 0): ?>
+                                        <span class="mini-badge refunded-mini"><?php echo $date_refunded; ?> refunded</span>
                                     <?php endif; ?>
                                 </div>
                             </div>

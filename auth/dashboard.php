@@ -33,6 +33,10 @@ $stats['today'] = $stmt->get_result()->fetch_assoc()['total'];
 $result = $conn->query("SELECT COUNT(*) as total FROM bookings b JOIN payments p ON b.id = p.booking_id WHERE (b.status IN ('cancelled', 'rejected') AND p.payment_status = 'paid') OR b.status = 'for_refund'");
 $stats['pending_refunds'] = $result->fetch_assoc()['total'];
 
+// Total Refunded
+$result = $conn->query("SELECT COUNT(*) as total FROM payments WHERE payment_status = 'refunded'");
+$stats['total_refunded'] = $result->fetch_assoc()['total'];
+
 // Recent reservations (last 7 days)
 $week_ago = date('Y-m-d', strtotime('-7 days'));
 $stmt = $conn->prepare("SELECT COUNT(*) as total FROM bookings WHERE created_at >= ?");
@@ -184,6 +188,16 @@ $upcoming_reservations = $conn->query("
                 <div class="stat-info">
                     <h3><?php echo $stats['pending_refunds']; ?></h3>
                     <p>Pending Refunds</p>
+                </div>
+            </div>
+
+            <div class="stat-card approved">
+                <div class="stat-icon">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><?php echo $stats['total_refunded']; ?></h3>
+                    <p>Total Refunded</p>
                 </div>
             </div>
         </div>

@@ -1246,6 +1246,11 @@ a:hover {
     color: #ea580c;
 }
 
+.refunded-mini {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--cs-success);
+}
+
 /* Reservation Cards */
 .date-reservations {
     padding: 0.5rem;
