@@ -213,9 +213,10 @@ $addon_names = [
             justify-content: center;
         }
 
-        .btn-print {
+        .action-buttons .btn-print,
+        .action-buttons .btn-print i {
             background: #292929ff;
-            color: white;
+            color: #ffffff !important;
         }
 
         .btn-home {
