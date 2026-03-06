@@ -48,7 +48,65 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 $stmt2->execute();
 
                 $conn->commit();
-                
+
+                // ── Auto-resolve competing reservations (same event, same date) ──
+                // Get the event_id and booking_date of the just-approved booking
+                $approved_info = $conn->prepare("SELECT event_id, booking_date FROM bookings WHERE id = ?");
+                $approved_info->bind_param("i", $id);
+                $approved_info->execute();
+                $approved_row = $approved_info->get_result()->fetch_assoc();
+
+                if ($approved_row) {
+                    $ev_id    = $approved_row['event_id'];
+                    $bk_date  = $approved_row['booking_date'];
+
+                    // Find all OTHER pending bookings for the same event + date
+                    $rivals = $conn->prepare("
+                        SELECT b.id, p.payment_status
+                        FROM bookings b
+                        JOIN payments p ON p.booking_id = b.id
+                        WHERE b.event_id = ?
+                          AND b.booking_date = ?
+                          AND b.status = 'pending'
+                          AND b.id != ?
+                    ");
+                    $rivals->bind_param("isi", $ev_id, $bk_date, $id);
+                    $rivals->execute();
+                    $rivals_result = $rivals->get_result();
+
+                    $refund_ids   = [];
+                    $rejected_ids = [];
+
+                    while ($rival = $rivals_result->fetch_assoc()) {
+                        if ($rival['payment_status'] === 'paid') {
+                            // Case #1: paid → for refund
+                            $refund_ids[] = $rival['id'];
+                        } else {
+                            // Case #2: unpaid → rejected
+                            $rejected_ids[] = $rival['id'];
+                        }
+                    }
+
+                    // Bulk-update for_refund
+                    if (!empty($refund_ids)) {
+                        $placeholders = implode(',', array_fill(0, count($refund_ids), '?'));
+                        $types = str_repeat('i', count($refund_ids));
+                        $upd = $conn->prepare("UPDATE bookings SET status = 'for_refund' WHERE id IN ($placeholders)");
+                        $upd->bind_param($types, ...$refund_ids);
+                        $upd->execute();
+                    }
+
+                    // Bulk-update rejected
+                    if (!empty($rejected_ids)) {
+                        $placeholders = implode(',', array_fill(0, count($rejected_ids), '?'));
+                        $types = str_repeat('i', count($rejected_ids));
+                        $upd = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id IN ($placeholders)");
+                        $upd->bind_param($types, ...$rejected_ids);
+                        $upd->execute();
+                    }
+                }
+                // ──────────────────────────────────────────────────────────────────
+
                 // ── Send Approval Notification Email ──────────────────────────
                 // Fetch details for the email
                 $details_stmt = $conn->prepare("
@@ -74,7 +132,12 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 }
                 // ─────────────────────────────────────────────────────────────
 
-                $_SESSION['message'] = 'Reservation approved successfully';
+                $refund_count   = count($refund_ids ?? []);
+                $rejected_count = count($rejected_ids ?? []);
+                $msg = 'Reservation approved successfully.';
+                if ($refund_count > 0)   $msg .= " $refund_count competing paid reservation(s) moved to For Refund.";
+                if ($rejected_count > 0) $msg .= " $rejected_count unpaid reservation(s) auto-rejected.";
+                $_SESSION['message'] = $msg;
             } catch (Exception $e) {
                 $conn->rollback();
                 $_SESSION['error'] = 'Error approving reservation: ' . $e->getMessage();
