@@ -23,7 +23,6 @@ function getMailer($echo_debug = false, $timeout = 10) {
     $mail->Port       = 465;
 
     $mail->Timeout    = $timeout; 
-    $mail->SMTPConnectFilter = null; // Ensure no filters block connection
     
     // Log debug info to server's error log or echo it for the test tool
     $mail->SMTPDebug  = 2; 
