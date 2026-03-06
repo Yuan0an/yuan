@@ -84,24 +84,20 @@ $addon_names = [
         <div class="cs-search-card">
             <form method="POST" class="cs-form">
                 <div class="cs-form-row">
-                    <div class="cs-form-group">
-                        <div class="input-group">
-                            <label>Reference ID</label>
-                            <input type="text" name="ref_id" placeholder="e.g. RES-12345" 
+                    <div class="input-group">
+                        <label><i class="fas fa-hashtag"></i> Reference ID</label>
+                        <input type="text" name="ref_id" placeholder="e.g. RES-12345" 
                             value="<?php echo isset($_POST['ref_id']) ? htmlspecialchars($_POST['ref_id'] ?? '') : ''; ?>">
-                        </div>
-                        <div class="input-group">
-                            <label>Email Address</label>
-                            <input type="email" name="email" placeholder="Your registered email" 
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-envelope"></i> Email Address</label>
+                        <input type="email" name="email" placeholder="Your registered email" 
                             value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email'] ?? '') : ''; ?>"
                             required>
-                        </div>
                     </div>
-                    <div class="cs-form-group cs-form-btn-group">
-                        <button type="submit" class="cs-btn-search">
-                            <i class="fas fa-search"></i> Check Status
-                        </button>
-                    </div>
+                    <button type="submit" class="cs-btn-search">
+                        <i class="fas fa-search"></i> Check Status
+                    </button>
                 </div>
             </form>
         </div>
