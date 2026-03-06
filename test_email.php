@@ -36,12 +36,8 @@ if ($booking_id) {
 // Handle email sending
 if (isset($_POST['send_email']) && $booking_data) {
     ob_start(); // Capture debug output
+    require_once 'auto_email/config.php';
     try {
-        require_once 'auto_email/config.php';
-        $mail = getMailer();
-        $mail->SMTPDebug = 2;
-        $mail->Debugoutput = 'html';
-        
         $sent = sendBookingConfirmationEmail(
             $booking_data['reservation_id'],
             $booking_data['guest_email'],
@@ -53,13 +49,14 @@ if (isset($_POST['send_email']) && $booking_data) {
             $booking_data['booking_date'],
             $booking_data['start_time'],
             $booking_data['end_time'],
-            (bool)$booking_data['is_overnight']
+            (bool)$booking_data['is_overnight'],
+            true // Enable ECHO debug for this test tool
         );
 
         if ($sent) {
             $success = "Email sent successfully to <strong>" . htmlspecialchars($booking_data['guest_email']) . "</strong>!";
         } else {
-            $error = "Failed to send email. Check debug output below.";
+            $error = "Failed to send email. Check debug output below for detailed logs.";
         }
     } catch (Exception $e) {
         $error = "Caught Exception: " . $e->getMessage();

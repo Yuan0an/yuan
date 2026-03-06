@@ -4,7 +4,7 @@ use PHPMailer\PHPMailer\Exception;
 
 require 'vendor/autoload.php';
 
-function getMailer() {
+function getMailer($echo_debug = false) {
 
     $mail = new PHPMailer(true);
 
@@ -23,11 +23,15 @@ function getMailer() {
 
     $mail->Timeout    = 30; // Increased timeout
     
-    // Log debug info to server's error log for troubleshooting on Railway
-    $mail->SMTPDebug  = 3; 
-    $mail->Debugoutput = function($str, $level) {
-        error_log("[SMTP DEBUG] $str");
-    };
+    // Log debug info to server's error log or echo it for the test tool
+    $mail->SMTPDebug  = 2; 
+    if ($echo_debug) {
+        $mail->Debugoutput = 'html';
+    } else {
+        $mail->Debugoutput = function($str, $level) {
+            error_log("[SMTP DEBUG] $str");
+        };
+    }
 
     $mail->SMTPOptions = array(
         'ssl' => array(

@@ -32,10 +32,11 @@ function sendBookingConfirmationEmail(
     $booking_date,
     $start_time,
     $end_time,
-    $is_overnight = false
+    $is_overnight = false,
+    $echo_debug = false
 ) {
     try {
-        $mail = getMailer();
+        $mail = getMailer($echo_debug);
 
         // Recipient
         $mail->addAddress($guest_email, $guest_name);
