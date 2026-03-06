@@ -99,3 +99,53 @@ function sendBookingConfirmationEmail(
         return false;
     }
 }
+
+/**
+ * sendBookingApprovalEmail()
+ *
+ * Sends an Approval Notification email to the guest
+ * after an admin approves their reservation.
+ */
+function sendBookingApprovalEmail(
+    $reservation_id,
+    $guest_email,
+    $guest_name,
+    $event_title,
+    $booking_date,
+    $start_time,
+    $echo_debug = false
+) {
+    try {
+        $mail = getMailer($echo_debug);
+
+        // Recipient
+        $mail->addAddress($guest_email, $guest_name);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Your Reservation has been APPROVED - CK Resort';
+        
+        $booking_date_display = date('F j, Y', strtotime($booking_date));
+        $time_display = date('h:i A', strtotime($start_time));
+
+        $body = "<h2>Great news, " . htmlspecialchars($guest_name) . "!</h2>";
+        $body .= "<p>Your reservation request for <strong>" . htmlspecialchars($event_title) . "</strong> has been <strong>Approved</strong>.</p>";
+        $body .= "<p><strong>Reservation ID:</strong> " . $reservation_id . "<br>";
+        $body .= "<strong>Date:</strong> " . $booking_date_display . "<br>";
+        $body .= "<strong>Check-in Time:</strong> " . $time_display . "</p>";
+        
+        $body .= "<p>We have successfully verified your payment. You are now all set for your visit!</p>";
+        $body .= "<p>If you have any further questions, feel free to reply to this email or contact us directly.</p>";
+        $body .= "<p>We look forward to seeing you!<br><strong>CK Resort Team</strong></p>";
+
+        $mail->Body = $body;
+        $mail->AltBody = strip_tags(str_replace('<br>', "\n", $body));
+
+        $mail->send();
+        return true;
+
+    } catch (Exception $e) {
+        error_log('[CK Resort Email] Failed to send approval notification to '
+                  . $guest_email . ': ' . $e->getMessage());
+        return false;
+    }
+}

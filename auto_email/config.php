@@ -18,8 +18,8 @@ function getMailer($echo_debug = false) {
     $mail->Username   = 'calmayuan0@gmail.com';
     $mail->Password   = 'nluqnnkminsfphlj';
 
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
-    $mail->Port       = 587;
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; 
+    $mail->Port       = 465;
 
     $mail->Timeout    = 30; // Increased timeout
     

@@ -48,6 +48,32 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
                 $stmt2->execute();
 
                 $conn->commit();
+                
+                // ── Send Approval Notification Email ──────────────────────────
+                // Fetch details for the email
+                $details_stmt = $conn->prepare("
+                    SELECT b.reservation_id, b.booking_date, b.start_time, b.event_title, c.email, c.full_name 
+                    FROM bookings b 
+                    JOIN customers c ON b.customer_id = c.id 
+                    WHERE b.id = ?
+                ");
+                $details_stmt->bind_param("i", $id);
+                $details_stmt->execute();
+                $details = $details_stmt->get_result()->fetch_assoc();
+
+                if ($details) {
+                    require_once __DIR__ . '/../auto_email/send_booking_email.php';
+                    sendBookingApprovalEmail(
+                        $details['reservation_id'],
+                        $details['email'],
+                        $details['full_name'],
+                        $details['event_title'],
+                        $details['booking_date'],
+                        $details['start_time']
+                    );
+                }
+                // ─────────────────────────────────────────────────────────────
+
                 $_SESSION['message'] = 'Reservation approved successfully';
             } catch (Exception $e) {
                 $conn->rollback();
