@@ -11,6 +11,7 @@ $res_id = isset($_GET['res_id']) ? intval($_GET['res_id']) : 0;
     </div>
 
     <div class="preview-container" id="preview-container">
+        <button class="remove-file" id="remove-file" title="Remove image">&times;</button>
         <img src="" alt="Preview" class="preview-image" id="preview-img">
         <div class="upload-progress" id="progress-container">
             <div class="progress-bar" id="progress-bar"></div>
@@ -31,10 +32,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressBar = document.getElementById('progress-bar');
     const progressContainer = document.getElementById('progress-container');
     const statusMsg = document.getElementById('status-msg');
+    const removeBtn = document.getElementById('remove-file');
     const resId = <?php echo $res_id; ?>;
 
     // Trigger file input
     dropZone.addEventListener('click', () => fileInput.click());
+
+    // Reset Uploader
+    function resetUploader() {
+        fileInput.value = '';
+        window._pendingFile = null;
+        previewImg.src = '';
+        previewContainer.style.display = 'none';
+        uploadBtn.style.display = 'none';
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Confirm & Upload Receipt';
+        progressBar.style.width = '0%';
+        progressContainer.style.display = 'none';
+        statusMsg.textContent = '';
+    }
+
+    removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetUploader();
+    });
 
     // Drag and drop events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
