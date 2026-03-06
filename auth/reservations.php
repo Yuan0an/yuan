@@ -652,9 +652,13 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                     <div class="filter-row">
                         <div class="filter-group">
                             <label><i class="fas fa-calendar-alt"></i> Event</label>
-                            <select name="event_id" onchange="this.form.submit()">
+                            <select name="event_id">
                                 <option value="0">All Events</option>
-                                <?php while ($event = $events->fetch_assoc()): ?>
+                                <?php 
+                                // Reset pointer if needed or just use a fresh query
+                                $events->data_seek(0);
+                                while ($event = $events->fetch_assoc()): 
+                                ?>
                                     <option value="<?php echo $event['id']; ?>" <?php echo $event_id == $event['id'] ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($event['name'] ?? ''); ?>
                                     </option>
@@ -664,21 +668,23 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
 
                         <div class="filter-group">
                             <label><i class="fas fa-calendar"></i> Date From</label>
-                            <input type="date" name="date_from" value="<?php echo $date_from; ?>"
-                                onchange="this.form.submit()">
+                            <input type="date" name="date_from" value="<?php echo $date_from; ?>">
                         </div>
 
                         <div class="filter-group">
                             <label><i class="fas fa-calendar"></i> Date To</label>
-                            <input type="date" name="date_to" value="<?php echo $date_to; ?>" onchange="this.form.submit()">
+                            <input type="date" name="date_to" value="<?php echo $date_to; ?>">
                         </div>
 
                         <div class="filter-group" style="flex: 1; min-width: 200px;">
                             <label><i class="fas fa-search"></i> Search ID/Guest</label>
-                            <input type="text" name="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Reservation ID, Name, or Email" onchange="this.form.submit()">
+                            <input type="text" name="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Reservation ID, Name, or Email">
                         </div>
 
-                        <div class="filter-group">
+                        <div class="filter-group buttons-row">
+                            <button type="submit" class="btn-filter">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
                             <button type="button" onclick="window.location.href='reservations.php'" class="btn-reset">
                                 <i class="fas fa-redo"></i> Reset
                             </button>
