@@ -247,7 +247,7 @@ $addon_names = [
             <i class="fas fa-check-circle"></i>
             <h1>Thank You!</h1>
             <p>Your reservation request for <strong>
-                    <?php echo htmlspecialchars($reservation['event_title']); ?>
+                    <?php echo htmlspecialchars($reservation['event_title'] ?? ''); ?>
                 </strong> has been submitted.</p>
         </div>
 
@@ -264,15 +264,15 @@ $addon_names = [
                 <div class="info-grid">
                     <div class="info-item">
                         <label>Full Name</label>
-                        <span><?php echo htmlspecialchars($reservation['full_name']); ?></span>
+                        <span><?php echo htmlspecialchars($reservation['full_name'] ?? ''); ?></span>
                     </div>
                     <div class="info-item">
                         <label>Email Address</label>
-                        <span><?php echo htmlspecialchars($reservation['email']); ?></span>
+                        <span><?php echo htmlspecialchars($reservation['email'] ?? ''); ?></span>
                     </div>
                     <div class="info-item">
                         <label>Phone Number</label>
-                        <span><?php echo htmlspecialchars($reservation['phone']); ?></span>
+                        <span><?php echo htmlspecialchars($reservation['phone'] ?? ''); ?></span>
                     </div>
                     <div class="info-item">
                         <label>Alt. Phone</label>

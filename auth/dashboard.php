@@ -200,10 +200,10 @@ $upcoming_reservations = $conn->query("
                             <tr>
                                 <td>#<?php echo $reservation['reservation_id']; ?></td>
                                 <td>
-                                    <strong><?php echo htmlspecialchars($reservation['full_name']); ?></strong><br>
-                                    <small><?php echo htmlspecialchars($reservation['email']); ?></small>
+                                    <strong><?php echo htmlspecialchars($reservation['full_name'] ?? ''); ?></strong><br>
+                                    <small><?php echo htmlspecialchars($reservation['email'] ?? ''); ?></small>
                                 </td>
-                                <td><?php echo htmlspecialchars($reservation['event_name']); ?></td>
+                                <td><?php echo htmlspecialchars($reservation['event_name'] ?? ''); ?></td>
                                 <td>
                                     <?php echo date('M j, Y', strtotime($reservation['booking_date'])); ?><br>
                                     <?php echo date('g:i A', strtotime($reservation['start_time'])); ?> -
@@ -272,7 +272,7 @@ $upcoming_reservations = $conn->query("
                                 <div class="timeline-item <?php echo $res['status'] === 'completed' ? 'completed' : ($res['status'] === 'pending' ? 'pending' : 'active'); ?>">
                                     <div class="timeline-marker"></div>
                                     <div class="timeline-content">
-                                        <h4><?php echo htmlspecialchars($res['full_name']); ?> - <?php echo htmlspecialchars($res['event_name']); ?></h4>
+                                        <h4><?php echo htmlspecialchars($res['full_name'] ?? ''); ?> - <?php echo htmlspecialchars($res['event_name'] ?? ''); ?></h4>
                                         <p class="timeline-time">
                                             <i class="far fa-clock"></i> 
                                             <?php echo date('g:i A', strtotime($res['start_time'])); ?> - <?php echo date('g:i A', strtotime($res['end_time'])); ?>
@@ -295,7 +295,7 @@ $upcoming_reservations = $conn->query("
                                 <div class="timeline-item upcoming">
                                     <div class="timeline-marker <?php echo $res['status'] === 'pending' ? 'pending' : ''; ?>"></div>
                                     <div class="timeline-content">
-                                        <h4><?php echo htmlspecialchars($res['full_name']); ?> - <?php echo htmlspecialchars($res['event_name']); ?></h4>
+                                        <h4><?php echo htmlspecialchars($res['full_name'] ?? ''); ?> - <?php echo htmlspecialchars($res['event_name'] ?? ''); ?></h4>
                                         <p class="timeline-time">
                                             <i class="far fa-calendar"></i> <?php echo date('M j, Y', strtotime($res['booking_date'])); ?> 
                                         </p>

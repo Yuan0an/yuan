@@ -32,10 +32,10 @@ $result = $conn->query($sql);
                             date('g:i A', strtotime($event['end_time']));
                         ?>
                         <div class="event-item" data-id="<?php echo $event['id']; ?>"
-                            data-name="<?php echo htmlspecialchars($event['name']); ?>"
+                            data-name="<?php echo htmlspecialchars($event['name'] ?? ''); ?>"
                             data-start="<?php echo $event['start_time']; ?>" data-end="<?php echo $event['end_time']; ?>"
                             data-overnight="<?php echo $is_overnight; ?>" data-max="<?php echo $event['max_persons']; ?>">
-                            <h3><?php echo htmlspecialchars($event['name']); ?></h3>
+                            <h3><?php echo htmlspecialchars($event['name'] ?? ''); ?></h3>
                             <p><i class="far fa-clock"></i> <?php echo date('g:i A', strtotime($event['start_time'])); ?> to
                                 <?php echo $end_time_display; ?>
                             </p>

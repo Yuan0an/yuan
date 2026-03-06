@@ -157,7 +157,7 @@ if ($next_month > 12) {
                         <option value="0">All Events</option>
                         <?php while ($event = $events->fetch_assoc()): ?>
                             <option value="<?php echo $event['id']; ?>" <?php echo $selected_event == $event['id'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($event['name']); ?>
+                                <?php echo htmlspecialchars($event['name'] ?? ''); ?>
                             </option>
                         <?php endwhile; ?>
                     </select>

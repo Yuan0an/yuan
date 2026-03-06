@@ -504,15 +504,15 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                     <div class="detail-card">
                         <h3><i class="fas fa-user"></i> Customer Information</h3>
                         <div class="detail-content">
-                            <p><strong>Name:</strong> <?php echo htmlspecialchars($single_reservation['full_name']); ?></p>
-                            <p><strong>Email:</strong> <?php echo htmlspecialchars($single_reservation['email']); ?></p>
-                            <p><strong>Phone:</strong> <?php echo htmlspecialchars($single_reservation['phone']); ?></p>
+                            <p><strong>Name:</strong> <?php echo htmlspecialchars($single_reservation['full_name'] ?? ''); ?></p>
+                            <p><strong>Email:</strong> <?php echo htmlspecialchars($single_reservation['email'] ?? ''); ?></p>
+                            <p><strong>Phone:</strong> <?php echo htmlspecialchars($single_reservation['phone'] ?? ''); ?></p>
                             <?php if (!empty($single_reservation['alt_phone'])): ?>
-                                <p><strong>Alt Phone:</strong> <?php echo htmlspecialchars($single_reservation['alt_phone']); ?>
+                                <p><strong>Alt Phone:</strong> <?php echo htmlspecialchars($single_reservation['alt_phone'] ?? ''); ?>
                                 </p>
                             <?php endif; ?>
-                            <?php if (!empty($single_reservation['company'])): ?>
-                                <p><strong>Company:</strong> <?php echo htmlspecialchars($single_reservation['company']); ?></p>
+                            <?php if (!empty($company = $single_reservation['company'] ?? '')): ?>
+                                <p><strong>Company:</strong> <?php echo htmlspecialchars($company); ?></p>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -520,12 +520,12 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                     <div class="detail-card">
                         <h3><i class="fas fa-calendar-check"></i> Event Details</h3>
                         <div class="detail-content">
-                            <p><strong>Event:</strong> <?php echo htmlspecialchars($single_reservation['event_name']); ?>
+                            <p><strong>Event:</strong> <?php echo htmlspecialchars($single_reservation['event_name'] ?? ''); ?>
                             </p>
                             <p><strong>Event Title:</strong>
-                                <?php echo htmlspecialchars($single_reservation['event_title']); ?></p>
+                                <?php echo htmlspecialchars($single_reservation['event_title'] ?? ''); ?></p>
                             <p><strong>Event Type:</strong>
-                                <?php echo htmlspecialchars($single_reservation['event_type']); ?></p>
+                                <?php echo htmlspecialchars($single_reservation['event_type'] ?? ''); ?></p>
                             <p><strong>Date:</strong>
                                 <?php echo date('F j, Y', strtotime($single_reservation['booking_date'])); ?></p>
                             <p><strong>Time:</strong>
@@ -635,7 +635,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                 <option value="0">All Events</option>
                                 <?php while ($event = $events->fetch_assoc()): ?>
                                     <option value="<?php echo $event['id']; ?>" <?php echo $event_id == $event['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($event['name']); ?>
+                                        <?php echo htmlspecialchars($event['name'] ?? ''); ?>
                                     </option>
                                 <?php endwhile; ?>
                             </select>
@@ -654,7 +654,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
 
                         <div class="filter-group" style="flex: 1; min-width: 200px;">
                             <label><i class="fas fa-search"></i> Search ID/Guest</label>
-                            <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Reservation ID, Name, or Email" onchange="this.form.submit()">
+                            <input type="text" name="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Reservation ID, Name, or Email" onchange="this.form.submit()">
                         </div>
 
                         <div class="filter-group">
@@ -768,23 +768,23 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                         <?php echo ucfirst($res['status']); ?>
                                                     </span>
                                                 </div>
-                                                <h4 class="res-customer"><?php echo htmlspecialchars($res['full_name']); ?></h4>
+                                                <h4 class="res-customer"><?php echo htmlspecialchars($res['full_name'] ?? ''); ?></h4>
                                                 <div class="res-details-row">
                                                     <span class="res-detail">
                                                         <i class="fas fa-envelope"></i>
-                                                        <?php echo htmlspecialchars($res['email']); ?>
+                                                        <?php echo htmlspecialchars($res['email'] ?? ''); ?>
                                                     </span>
                                                     <span class="res-detail">
                                                         <i class="fas fa-phone"></i>
-                                                        <?php echo htmlspecialchars($res['phone']); ?>
+                                                        <?php echo htmlspecialchars($res['phone'] ?? ''); ?>
                                                     </span>
                                                 </div>
                                                 <div class="res-details-row">
                                                     <span class="res-detail">
                                                         <i class="fas fa-calendar-check"></i>
-                                                        <?php echo htmlspecialchars($res['event_name']); ?>
+                                                        <?php echo htmlspecialchars($res['event_name'] ?? ''); ?>
                                                         <?php if (!empty($res['event_title'])): ?>
-                                                            — <?php echo htmlspecialchars($res['event_title']); ?>
+                                                            — <?php echo htmlspecialchars($res['event_title'] ?? ''); ?>
                                                         <?php endif; ?>
                                                     </span>
                                                     <span class="res-detail">

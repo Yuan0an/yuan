@@ -85,19 +85,17 @@ $addon_names = [
             <form method="POST" class="cs-form">
                 <div class="cs-form-row">
                     <div class="cs-form-group">
-                        <label for="ref_id">
-                            <i class="fas fa-hashtag"></i> Reservation ID
-                        </label>
-                        <input type="text" id="ref_id" name="ref_id" placeholder="e.g. 54321"
-                            value="<?php echo isset($_POST['ref_id']) ? htmlspecialchars($_POST['ref_id']) : ''; ?>">
-                    </div>
-                    <div class="cs-form-group">
-                        <label for="email">
-                            <i class="fas fa-envelope"></i> Email Address
-                        </label>
-                        <input type="email" id="email" name="email" placeholder="your@email.com"
-                            value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
+                        <div class="input-group">
+                            <label>Reference ID</label>
+                            <input type="text" name="ref_id" placeholder="e.g. RES-12345" 
+                            value="<?php echo isset($_POST['ref_id']) ? htmlspecialchars($_POST['ref_id'] ?? '') : ''; ?>">
+                        </div>
+                        <div class="input-group">
+                            <label>Email Address</label>
+                            <input type="email" name="email" placeholder="Your registered email" 
+                            value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email'] ?? '') : ''; ?>"
                             required>
+                        </div>
                     </div>
                     <div class="cs-form-group cs-form-btn-group">
                         <button type="submit" class="cs-btn-search">
@@ -108,10 +106,10 @@ $addon_names = [
             </form>
         </div>
 
-        <?php if ($error): ?>
-            <div class="cs-alert cs-alert-error">
+        <?php if (isset($error)): ?>
+            <div class="error-msg">
                 <i class="fas fa-exclamation-circle"></i>
-                <?php echo htmlspecialchars($error); ?>
+                <?php echo htmlspecialchars($error ?? ''); ?>
             </div>
         <?php endif; ?>
 
@@ -119,12 +117,6 @@ $addon_names = [
             <!-- Status Banner -->
             <?php
             $status = $reservation['status'];
-            $status_icons = [
-                'pending' => 'fa-clock',
-                'approved' => 'fa-check-circle',
-                'rejected' => 'fa-times-circle',
-                'cancelled' => 'fa-ban'
-            ];
             $status_messages = [
                 'pending' => 'Your reservation is awaiting approval. We will review it shortly.',
                 'approved' => 'Great news! Your reservation has been approved. See you soon!',
@@ -161,22 +153,22 @@ $addon_names = [
                         <h3>Customer Information</h3>
                     </div>
                     <div class="cs-card-body">
-                        <div class="cs-info-row">
-                            <span class="cs-info-label">Name</span>
-                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['full_name']); ?></span>
+                        <div class="cs-info-item">
+                            <label>Name</label>
+                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['full_name'] ?? ''); ?></span>
                         </div>
-                        <div class="cs-info-row">
-                            <span class="cs-info-label">Email</span>
-                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['email']); ?></span>
+                        <div class="cs-info-item">
+                            <label>Email</label>
+                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['email'] ?? ''); ?></span>
                         </div>
-                        <div class="cs-info-row">
-                            <span class="cs-info-label">Phone</span>
-                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['phone']); ?></span>
+                        <div class="cs-info-item">
+                            <label>Phone</label>
+                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['phone'] ?? ''); ?></span>
                         </div>
                         <?php if (!empty($reservation['company'])): ?>
-                            <div class="cs-info-row">
-                                <span class="cs-info-label">Company</span>
-                                <span class="cs-info-value"><?php echo htmlspecialchars($reservation['company']); ?></span>
+                            <div class="cs-info-item">
+                                <label>Company</label>
+                                <span class="cs-info-value"><?php echo htmlspecialchars($reservation['company'] ?? ''); ?></span>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -189,13 +181,13 @@ $addon_names = [
                         <h3>Event Details</h3>
                     </div>
                     <div class="cs-card-body">
-                        <div class="cs-info-row">
-                            <span class="cs-info-label">Event</span>
-                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['event_base_name']); ?></span>
+                        <div class="cs-info-item">
+                            <label>Event Type</label>
+                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['event_base_name'] ?? ''); ?></span>
                         </div>
-                        <div class="cs-info-row">
-                            <span class="cs-info-label">Title</span>
-                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['event_title']); ?></span>
+                        <div class="cs-info-item">
+                            <label>Package/Title</label>
+                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['event_title'] ?? ''); ?></span>
                         </div>
                         <div class="cs-info-row">
                             <span class="cs-info-label">Date</span>
@@ -222,9 +214,9 @@ $addon_names = [
                         <h3>Payment Information</h3>
                     </div>
                     <div class="cs-card-body">
-                        <div class="cs-info-row">
-                            <span class="cs-info-label">Method</span>
-                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['payment_method']); ?></span>
+                        <div class="cs-info-item">
+                            <label>Payment Method</label>
+                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['payment_method'] ?? ''); ?></span>
                         </div>
                         <div class="cs-info-row">
                             <span class="cs-info-label">Payment Status</span>
