@@ -89,23 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                     </div>
 
-                    <div class="options-row">
-                        <label class="remember-me">
-                            <input type="checkbox"> Remember me
-                        </label>
-                    </div>
-
                     <button type="submit" class="btn-login">Login</button>
                     
-                    <a href="#" class="forgot-link">Forgot Password or Username?</a>
                 </form>
             </div>
 
-            <div class="login-footer">
-                <a href="#">FAQS</a>
-                <a href="#">TERMS OF USE</a>
-                <a href="#">PRIVACY POLICY</a>
-            </div>
         </div>
 
         <!-- Right Section -->
