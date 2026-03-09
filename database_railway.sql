@@ -84,7 +84,7 @@ CREATE TABLE payments (
     total_price DECIMAL(10,2),
     time_uploaded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (booking_id) REFERENCES bookings(id)
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
 
 INSERT INTO `events` (`id`, `name`, `start_time`, `end_time`, `max_persons`, `is_overnight`) VALUES

@@ -14,7 +14,10 @@ $conn->query("UPDATE bookings SET status = 'rejected' WHERE status = 'pending' A
     DATE_ADD(CONCAT(booking_date, ' ', end_time), INTERVAL IF(end_time <= start_time, 1, 0) DAY) <= NOW() - INTERVAL 1 HOUR");
 
 // Auto-delete old cancelled and rejected reservations
+$conn->query("DELETE FROM payments WHERE booking_id IN (SELECT id FROM bookings WHERE status = 'cancelled' AND booking_date <= CURDATE() - INTERVAL 7 DAY)");
 $conn->query("DELETE FROM bookings WHERE status = 'cancelled' AND booking_date <= CURDATE() - INTERVAL 7 DAY");
+
+$conn->query("DELETE FROM payments WHERE booking_id IN (SELECT id FROM bookings WHERE status = 'rejected' AND booking_date <= CURDATE() - INTERVAL 3 DAY)");
 $conn->query("DELETE FROM bookings WHERE status = 'rejected' AND booking_date <= CURDATE() - INTERVAL 3 DAY");
 
 // Handle actions
