@@ -171,9 +171,23 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             break;
 
         case 'reject':
-            $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ? AND status = 'pending'");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
+            // Check if it's paid first (in payments table)
+            $check = $conn->prepare("SELECT payment_status FROM payments WHERE booking_id = ?");
+            $check->bind_param("i", $id);
+            $check->execute();
+            $p_res = $check->get_result()->fetch_assoc();
+
+            if ($p_res && $p_res['payment_status'] === 'paid') {
+                $stmt = $conn->prepare("UPDATE bookings SET status = 'for_refund' WHERE id = ? AND status = 'pending'");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $_SESSION['message'] = 'Paid reservation moved to For Refund';
+            } else {
+                $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ? AND status = 'pending'");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $_SESSION['message'] = 'Reservation rejected';
+            }
 
             // ── Send Rejection Notification Email ──────────────────────────
             $details_stmt = $conn->prepare("
@@ -212,15 +226,26 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             }
             */
             // ─────────────────────────────────────────────────────────────
-
-            $_SESSION['message'] = 'Reservation rejected';
             break;
 
         case 'cancel':
-            $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ?");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-            $_SESSION['message'] = 'Reservation moved to Rejected/Cancelled';
+            // Check if it's paid first (in payments table)
+            $check = $conn->prepare("SELECT payment_status FROM payments WHERE booking_id = ?");
+            $check->bind_param("i", $id);
+            $check->execute();
+            $p_res = $check->get_result()->fetch_assoc();
+
+            if ($p_res && $p_res['payment_status'] === 'paid') {
+                $stmt = $conn->prepare("UPDATE bookings SET status = 'for_refund' WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $_SESSION['message'] = 'Paid reservation moved to For Refund';
+            } else {
+                $stmt = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $_SESSION['message'] = 'Reservation moved to Rejected/Cancelled';
+            }
             break;
 
         case 'reject_payment':
