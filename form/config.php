@@ -61,10 +61,23 @@ try {
     }
 
     // 4. Ensure Super Admin exists with correct credentials and role
-    $sa_pass = '$2y$10$qGGbmj2VZzdjVPVGH4Ufgel09HVjV0LYoiw32kQ7fPgp933JO7feI2'; // Superadmin@ckresort1
-    $conn->query("INSERT INTO admins (username, password, full_name, email, role) 
-                  VALUES ('superadmin', '$sa_pass', 'Super Administrator', 'superadmin@example.com', 'superadmin')
-                  ON DUPLICATE KEY UPDATE role = 'superadmin', password = '$sa_pass'");
+    $sa_user = 'superadmin';
+    $sa_pass_plain = 'Superadmin@ckresort1';
+    
+    $check_sa = $conn->query("SELECT id, password FROM admins WHERE username = '$sa_user' LIMIT 1");
+    if ($check_sa && $check_sa->num_rows > 0) {
+        $admin = $check_sa->fetch_assoc();
+        // If password verification fails, force update the password hash
+        if (!password_verify($sa_pass_plain, $admin['password'])) {
+            $new_hash = password_hash($sa_pass_plain, PASSWORD_BCRYPT);
+            $conn->query("UPDATE admins SET password = '$new_hash', role = 'superadmin' WHERE username = '$sa_user'");
+        }
+    } else {
+        // Create it if it doesn't exist
+        $new_hash = password_hash($sa_pass_plain, PASSWORD_BCRYPT);
+        $conn->query("INSERT INTO admins (username, password, full_name, email, role) 
+                      VALUES ('$sa_user', '$new_hash', 'Super Administrator', 'superadmin@example.com', 'superadmin')");
+    }
 } catch (Exception $e) {
     // Silently continue
 }

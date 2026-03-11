@@ -7,7 +7,7 @@ echo "PHP Version: " . PHP_VERSION . "<br>";
 echo "MySQLi Charset: " . $conn->character_set_name() . "<br>";
 
 // Check admins table
-$result = $conn->query("SELECT id, username, email, role, LENGTH(password) as pass_len FROM admins");
+$result = $conn->query("SELECT id, username, email, role, password, LENGTH(password) as pass_len FROM admins");
 echo "<h3>Admins Table Content (Masked)</h3>";
 while ($row = $result->fetch_assoc()) {
     echo "ID: " . $row['id'] . " | ";
@@ -15,7 +15,7 @@ while ($row = $result->fetch_assoc()) {
     echo "Email: " . htmlspecialchars($row['email']) . " | ";
     echo "Role: " . htmlspecialchars($row['role']) . " | ";
     echo "Pass Len: " . $row['pass_len'] . " | ";
-    echo "Hex: " . bin2hex($row['password']) . "<br>";
+    echo "Hex: " . bin2hex($row['password'] ?? '') . "<br>";
 }
 
 // Test specific superadmin lookup
