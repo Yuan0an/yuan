@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     }
-    $addons_json = $conn->real_escape_string(json_encode($addons));
+    $addons_json = json_encode($addons);
 
     // Fetch special dates for surcharge
     $special_dates = [];
