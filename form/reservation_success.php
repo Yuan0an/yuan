@@ -30,10 +30,15 @@ if (!$reservation) {
 
 // Fetch all addons for names and current prices
 $addon_info = [];
+$addon_by_name = [];
 $addons_res = $conn->query("SELECT id, name, price FROM addons");
 while ($row = $addons_res->fetch_assoc()) {
     $addon_info[$row['id']] = [
-        'name' => $row['name'],
+        'name'  => $row['name'],
+        'price' => floatval($row['price'])
+    ];
+    $addon_by_name[$row['name']] = [
+        'name'  => $row['name'],
         'price' => floatval($row['price'])
     ];
 }
