@@ -1,6 +1,5 @@
 <?php
 // includes/footer.php
-// Ensure $conn is available if this is included in pages that have it
 if (isset($conn)) {
     $footer_settings = [];
     $fs_res = $conn->query("SELECT * FROM site_settings WHERE setting_key LIKE 'footer_%'");
@@ -11,37 +10,50 @@ if (isset($conn)) {
     }
 }
 ?>
-<footer class="resort-footer">
-    <div class="footer-container">
-        <div class="footer-header">
-            <h1>CK RESORT & EVENT PLACE</h1>
+<footer class="site-footer-simple">
+    <div class="footer-simple-container">
+        <div class="footer-info">
+            <p class="footer-brand">CK RESORT & EVENT PLACE</p>
+            <p class="footer-address"><?php echo htmlspecialchars($footer_settings['footer_address'] ?? '123 Resort Drive, Event City, Philippines'); ?></p>
+            <p class="footer-contact">Contact: <?php echo htmlspecialchars($footer_settings['footer_contact'] ?? '09209502510 | 09693226114'); ?></p>
         </div>
-
-        <div class="footer-body">
-            <div class="contact-section">
-                <p class="label">About Us:</p>
-                <p class="details" style="margin-bottom: 15px;"><?php echo nl2br(htmlspecialchars($footer_settings['footer_about'] ?? 'Our resort provides a premium booking experience for your special events.')); ?></p>
-                
-                <p class="label">Find Us:</p>
-                <p class="details" style="margin-bottom: 15px;"><i class="fas fa-map-marker-alt" style="color: #4CAF50; margin-right: 8px;"></i> <?php echo htmlspecialchars($footer_settings['footer_address'] ?? '123 Resort Drive, Event City, Philippines'); ?></p>
-
-                <p class="label">Contact Number / Info:</p>
-                <p class="details"><?php echo htmlspecialchars($footer_settings['footer_contact'] ?? '09209502510 | 09693226114 | 09667760680'); ?></p>
-                
-                <ul class="social-list">
-                    <li><i class="fab fa-google"></i> Email: ckresortandeventsplace@gmail.com</li>
-                    <li><i class="fab fa-airbnb"></i> Airbnb: CK Resort And Events Place</li>
-                    <li><i class="fab fa-facebook"></i> Facebook: CK Resort & Events Place</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="footer-footer">
-            <a href="/form/index.php" class="btn-book">BOOK NOW</a>
-            <p class="copyright">&copy; <?php echo date("Y"); ?> Ck Resort & Events Place</p>
+        <div class="footer-bottom-simple">
+            <p>&copy; <?php echo date("Y"); ?> CK Resort & Events Place. All rights reserved.</p>
         </div>
     </div>
 </footer>
+
+<style>
+.site-footer-simple {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    padding: 40px 20px;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+}
+.footer-simple-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.footer-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+.footer-address, .footer-contact {
+    font-size: 0.95rem;
+    color: #a0a0a0;
+    margin-bottom: 5px;
+}
+.footer-bottom-simple {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+    font-size: 0.85rem;
+    color: #777;
+}
+</style>
 <script src="/assets/js/carousel.js"></script>
 <script src="/assets/js/script.js"></script>
 </body>

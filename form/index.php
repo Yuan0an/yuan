@@ -318,25 +318,7 @@ while ($row = $settings_res->fetch_assoc()) {
     </div>
 
     <!-- Website Footer -->
-    <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-section">
-                <h4>About Our Resort</h4>
-                <p><?php echo nl2br(htmlspecialchars($settings['footer_about'] ?? '')); ?></p>
-            </div>
-            <div class="footer-section">
-                <h4>Find Us</h4>
-                <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($settings['footer_address'] ?? ''); ?></p>
-            </div>
-            <div class="footer-section">
-                <h4>Contact Us</h4>
-                <p><i class="fas fa-phone-alt"></i> <?php echo htmlspecialchars($settings['footer_contact'] ?? ''); ?></p>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; <?php echo date('Y'); ?> CK Resort. All rights reserved.
-        </div>
-    </footer>
+    <?php include __DIR__ . "/../includes/footer.php"; ?>
 
     <!-- Generic Modal -->
     <div id="infoModal" class="modal-overlay">

@@ -1070,30 +1070,11 @@ h2 {
 
 
 
-.resort-footer {
-    background-image: url(../images/RoomsBG.jpg);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-
-    display: flex;
-    text-align: left;
-}
-
-.footer-body,
-.footer-footer {
-    font-size: 24px;
-    color: #ffffff;
-    font-weight: bold;
-}
 
 .footer-footer a {
     color: rgb(77, 153, 240);
 }
 
-.footer-header h1 {
-    color: #ffffff;
-}
 
 @media (max-width: 900px) {
 
@@ -1522,29 +1503,6 @@ h2 {
         aspect-ratio: 16/9;
     }
 
-    /* Footer */
-    .resort-footer {
-        padding: 20px 10px;
-    }
-
-    .footer-body,
-    .footer-footer {
-        font-size: 14px;
-    }
-
-    .footer-header h1 {
-        font-size: 20px;
-    }
-
-    .social-list li {
-        font-size: 13px;
-        word-break: break-word;
-    }
-
-    .btn-book {
-        font-size: 14px;
-        padding: 10px 24px;
-    }
 
     /* About Page */
     .about-page {
