@@ -598,9 +598,12 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             </p>
                             <p><strong>Guests:</strong> <?php echo $single_reservation['persons']; ?> persons</p>
                             <p><strong>Capacity:</strong> <?php echo $single_reservation['max_persons']; ?> persons max</p>
-                            
-                            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
-                            <h4>Itemized Breakdown</h4>
+                        </div>
+                    </div>
+
+                    <div class="detail-card">
+                        <h3><i class="fas fa-receipt"></i> Itemized Breakdown</h3>
+                        <div class="detail-content">
                             <?php
                             $addons_booked = json_decode($single_reservation['addons_json'], true) ?: [];
                             $total = floatval($single_reservation['total_price']);
@@ -628,9 +631,8 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                 }
                             }
                             $base_rate = $total - $addons_sum - $surcharge;
-                            ?>
-                            <p><strong>Base Rate (<?php echo htmlspecialchars($single_reservation['event_type']); ?>):</strong> ₱<?php echo number_format($base_rate); ?></p>
-                            <?php if ($surcharge > 0): ?>
+                            echo '<p><strong>Base Rate (' . htmlspecialchars($single_reservation['event_type'] ?? 'Unknown Event') . '):</strong> ₱' . number_format($base_rate) . '</p>';
+                            if ($surcharge > 0): ?>
                                 <p style="color: #e11d48;"><strong>Weekend/Holiday Surcharge:</strong> ₱<?php echo number_format($surcharge); ?></p>
                             <?php endif; ?>
                             <p style="font-size: 1.1rem; border-top: 2px solid #eee; padding-top: 10px; margin-top: 10px;">

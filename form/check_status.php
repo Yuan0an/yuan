@@ -303,12 +303,8 @@ while($s_row = $settings_res->fetch_assoc()) {
                     </div>
                     <div class="cs-card-body">
                         <div class="cs-info-item">
-                            <label>Event Type</label>
+                            <label>Event Name</label>
                             <span class="cs-info-value"><?php echo htmlspecialchars($reservation['event_base_name'] ?? ''); ?></span>
-                        </div>
-                        <div class="cs-info-item">
-                            <label>Package/Title</label>
-                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['event_title'] ?? ''); ?></span>
                         </div>
                         <div class="cs-info-row">
                             <span class="cs-info-label">Date</span>
@@ -347,6 +343,16 @@ while($s_row = $settings_res->fetch_assoc()) {
                                 </span>
                             </span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Itemized Breakdown -->
+                <div class="cs-detail-card">
+                    <div class="cs-card-header">
+                        <i class="fas fa-receipt"></i>
+                        <h3>Itemized Breakdown</h3>
+                    </div>
+                    <div class="cs-card-body">
                         <?php
                         $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
                         $total = floatval($reservation['total_price']);
@@ -380,7 +386,7 @@ while($s_row = $settings_res->fetch_assoc()) {
                         $base_rate = $total - $addons_sum - $surcharge;
                         ?>
                         <div class="cs-info-row">
-                            <span class="cs-info-label">Base Rate</span>
+                            <span class="cs-info-label">Base Rate (<?php echo htmlspecialchars($reservation['event_base_name'] ?? 'Unknown Event'); ?>)</span>
                             <span class="cs-info-value">₱<?php echo number_format($base_rate); ?></span>
                         </div>
                         <?php echo $addons_html; ?>
@@ -395,6 +401,10 @@ while($s_row = $settings_res->fetch_assoc()) {
                         <div class="cs-info-row cs-total-row">
                             <span class="cs-info-label">Total Price</span>
                             <span class="cs-info-value cs-total-value">₱<?php echo number_format($total); ?></span>
+                        </div>
+                        <div class="cs-info-row" style="margin-top: 5px; color: var(--cs-primary); font-weight: 500;">
+                            <span class="cs-info-label">Downpayment Required (50%)</span>
+                            <span class="cs-info-value">₱<?php echo number_format($total * 0.5); ?></span>
                         </div>
                     </div>
                 </div>
@@ -482,9 +492,6 @@ while($s_row = $settings_res->fetch_assoc()) {
             <div class="cs-action-row">
                 <button onclick="downloadSummary()" class="cs-btn-action cs-btn-download">
                     <i class="fas fa-download"></i> Download Summary
-                </button>
-                <button onclick="window.print()" class="cs-btn-action cs-btn-print">
-                    <i class="fas fa-print"></i> Print Details
                 </button>
                 <a href="/index.php" class="cs-btn-action cs-btn-home">
                     <i class="fas fa-home"></i> Back to Home
