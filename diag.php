@@ -14,11 +14,19 @@ while ($row = $result->fetch_assoc()) {
     echo "User: " . htmlspecialchars($row['username']) . " | ";
     echo "Email: " . htmlspecialchars($row['email']) . " | ";
     echo "Role: " . htmlspecialchars($row['role']) . " | ";
-    echo "Pass Len: " . $row['pass_len'] . "<br>";
+    echo "Pass Len: " . $row['pass_len'] . " | ";
+    echo "Hex: " . bin2hex($row['password']) . "<br>";
 }
 
 // Test specific superadmin lookup
 $username = 'superadmin';
+$test_pass = 'Superadmin@ckresort1';
+
+// Generate fresh hash for comparison
+$fresh_hash = password_hash($test_pass, PASSWORD_BCRYPT);
+echo "<h3>Comparison Check</h3>";
+echo "Fresh Hash generated on this server: " . $fresh_hash . " (Len: " . strlen($fresh_hash) . ")<br>";
+
 $stmt = $conn->prepare("SELECT id, username, password FROM admins WHERE username = ? OR email = ?");
 $stmt->bind_param("ss", $username, $username);
 $stmt->execute();
