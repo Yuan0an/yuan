@@ -6,8 +6,8 @@ include_once __DIR__ . '/../includes/header.php';
 $sql = "SELECT * FROM events ORDER BY sort_order ASC";
 $result = $conn->query($sql);
 
-// Get all active addons
-$addons_sql = "SELECT * FROM addons WHERE is_active = 1";
+// Get all active addons ordered by sort_order
+$addons_sql = "SELECT * FROM addons WHERE is_active = 1 ORDER BY sort_order ASC";
 $addons_result = $conn->query($addons_sql);
 $addons = [];
 while ($row = $addons_result->fetch_assoc()) {

@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$addons = $conn->query("SELECT * FROM addons");
+$addons = $conn->query("SELECT * FROM addons ORDER BY sort_order ASC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,6 +42,8 @@ $addons = $conn->query("SELECT * FROM addons");
     <title>Manage Add-ons</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         .addon-card { background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
         .btn { padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
@@ -55,6 +57,9 @@ $addons = $conn->query("SELECT * FROM addons");
         .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
         .status-active { background: #dcfce7; color: #166534; }
         .status-inactive { background: #fee2e2; color: #991b1b; }
+        .drag-handle { cursor: move; color: #ccc; padding: 0 10px; }
+        .drag-handle:hover { color: #666; }
+        .sortable-ghost { opacity: 0.4; background-color: #f0f0f0; }
     </style>
 </head>
 <body>
@@ -69,17 +74,20 @@ $addons = $conn->query("SELECT * FROM addons");
             <div style="background: #dcfce7; color: #166534; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;"><?php echo $message; ?></div>
         <?php endif; ?>
 
-        <div class="addon-list">
+        <div class="addon-list" id="sortable-addons">
             <?php while($row = $addons->fetch_assoc()): ?>
-                <div class="addon-card">
-                    <div>
-                        <h3 style="margin:0;"><?php echo htmlspecialchars($row['name']); ?></h3>
-                        <p style="margin:5px 0; color:#64748b;">
-                            Price: P<?php echo number_format($row['price'], 2); ?> | Type: <?php echo ucfirst($row['type']); ?>
-                            <span class="status-badge <?php echo $row['is_active'] ? 'status-active' : 'status-inactive'; ?>">
-                                <?php echo $row['is_active'] ? 'Active' : 'Inactive'; ?>
-                            </span>
-                        </p>
+                <div class="addon-card" data-id="<?php echo $row['id']; ?>">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="drag-handle"><i class="fas fa-grip-lines"></i></div>
+                        <div>
+                            <h3 style="margin:0;"><?php echo htmlspecialchars($row['name']); ?></h3>
+                            <p style="margin:5px 0; color:#64748b;">
+                                Price: P<?php echo number_format($row['price'], 2); ?> | Type: <?php echo ucfirst($row['type']); ?>
+                                <span class="status-badge <?php echo $row['is_active'] ? 'status-active' : 'status-inactive'; ?>">
+                                    <?php echo $row['is_active'] ? 'Active' : 'Inactive'; ?>
+                                </span>
+                            </p>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-primary" onclick='editAddon(<?php echo json_encode($row); ?>)'>Edit</button>
@@ -148,6 +156,38 @@ $addons = $conn->query("SELECT * FROM addons");
             document.getElementById('addonType').value = data.type;
             document.getElementById('addonActive').checked = data.is_active == 1;
         }
+
+        // Sortable Initialization
+        $(document).ready(function() {
+            const el = document.getElementById('sortable-addons');
+            const sortable = Sortable.create(el, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    const order = [];
+                    $('#sortable-addons .addon-card').each(function(index) {
+                        order.push({
+                            id: $(this).data('id'),
+                            sort_order: index
+                        });
+                    });
+
+                    // Save order via AJAX
+                    $.ajax({
+                        url: 'update_addon_order.php',
+                        method: 'POST',
+                        data: { order: order },
+                        success: function(response) {
+                            console.log('Order updated:', response);
+                        },
+                        error: function() {
+                            alert('Failed to update order');
+                        }
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>

@@ -29,6 +29,7 @@ try {
     $ensureColumn('admins', 'role', "VARCHAR(20) DEFAULT 'admin' AFTER email");
     $ensureColumn('events', 'pricing_logic', "TEXT AFTER is_overnight");
     $ensureColumn('events', 'sort_order', "INT DEFAULT 0");
+    $ensureColumn('addons', 'sort_order', "INT DEFAULT 0");
     $ensureColumn('payment_methods', 'qr_code_url', "VARCHAR(255) AFTER details");
 
     // 2. Create new tables if missing

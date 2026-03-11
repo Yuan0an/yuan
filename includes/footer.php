@@ -1,3 +1,16 @@
+<?php
+// includes/footer.php
+// Ensure $conn is available if this is included in pages that have it
+if (isset($conn)) {
+    $footer_settings = [];
+    $fs_res = $conn->query("SELECT * FROM site_settings WHERE setting_key LIKE 'footer_%'");
+    if ($fs_res) {
+        while ($fs_row = $fs_res->fetch_assoc()) {
+            $footer_settings[$fs_row['setting_key']] = $fs_row['setting_value'];
+        }
+    }
+}
+?>
 <footer class="resort-footer">
     <div class="footer-container">
         <div class="footer-header">
@@ -6,8 +19,14 @@
 
         <div class="footer-body">
             <div class="contact-section">
-                <p class="label">Contact Number:</p>
-                <p class="details">09209502510 | 09693226114 | 09667760680</p>
+                <p class="label">About Us:</p>
+                <p class="details" style="margin-bottom: 15px;"><?php echo nl2br(htmlspecialchars($footer_settings['footer_about'] ?? 'Our resort provides a premium booking experience for your special events.')); ?></p>
+                
+                <p class="label">Find Us:</p>
+                <p class="details" style="margin-bottom: 15px;"><i class="fas fa-map-marker-alt" style="color: #4CAF50; margin-right: 8px;"></i> <?php echo htmlspecialchars($footer_settings['footer_address'] ?? '123 Resort Drive, Event City, Philippines'); ?></p>
+
+                <p class="label">Contact Number / Info:</p>
+                <p class="details"><?php echo htmlspecialchars($footer_settings['footer_contact'] ?? '09209502510 | 09693226114 | 09667760680'); ?></p>
                 
                 <ul class="social-list">
                     <li><i class="fab fa-google"></i> Email: ckresortandeventsplace@gmail.com</li>
