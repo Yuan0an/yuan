@@ -638,7 +638,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             ?>
                             
                             <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #475569; font-size: 0.95rem;">
-                                <span>Base Rate (<?php echo htmlspecialchars($single_reservation['event_type'] ?? 'Unknown Event'); ?>)</span>
+                                <span>Base Rate (<?php echo htmlspecialchars($single_reservation['event_name'] ?? 'Unknown Event'); ?>)</span>
                                 <strong>₱<?php echo number_format($base_rate); ?></strong>
                             </div>
                             
