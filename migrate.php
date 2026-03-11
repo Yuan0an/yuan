@@ -27,7 +27,41 @@ $migrations = [
         "sql" => "ALTER TABLE bookings ADD COLUMN reservation_id VARCHAR(10) UNIQUE",
         "check" => "SHOW COLUMNS FROM bookings LIKE 'reservation_id'"
     ],
+    "Add role to admins" => [
+        "sql" => "ALTER TABLE admins ADD COLUMN role VARCHAR(20) DEFAULT 'admin' AFTER email",
+        "check" => "SHOW COLUMNS FROM admins LIKE 'role'"
+    ],
+    "Add pricing_logic to events" => [
+        "sql" => "ALTER TABLE events ADD COLUMN pricing_logic TEXT AFTER is_overnight",
+        "check" => "SHOW COLUMNS FROM events LIKE 'pricing_logic'"
+    ],
+    "Create addons table" => [
+        "sql" => "CREATE TABLE IF NOT EXISTS addons (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            description TEXT,
+            type ENUM('counter', 'checkbox') DEFAULT 'counter',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )",
+        "check" => "SHOW TABLES LIKE 'addons'"
+    ],
+    "Create payment_methods table" => [
+        "sql" => "CREATE TABLE IF NOT EXISTS payment_methods (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            icon VARCHAR(50),
+            details TEXT,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )",
+        "check" => "SHOW TABLES LIKE 'payment_methods'"
+    ],
 ];
+
+// Seed logic for migrate.php
+$conn->query("INSERT IGNORE INTO admins (username, password, full_name, email, role) VALUES ('superadmin', '$2y$10$qGGbmj2VZzdjVPVGH4Ufgel09HVjV0LYoiw32kQ7fPgp933JO7feI2', 'Super Administrator', 'superadmin@example.com', 'superadmin')");
 
 echo "<h3>Database Check Results:</h3>";
 $all_ok = true;
