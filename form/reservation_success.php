@@ -28,23 +28,31 @@ if (!$reservation) {
     die("Reservation not found.");
 }
 
-$addons = json_decode($reservation['addons_json'], true) ?: [];
-$addon_prices = [
-    'lpg'      => 250,
-    'butane'   => 150,
-    'bonfire'  => 500,
-    'pet'      => 200,
-    'darts'    => 250,
-    'billiard' => 500
-];
-$addon_names = [
-    'lpg'      => 'LPGas',
-    'butane'   => 'Butane',
-    'bonfire'  => 'Bonfire',
-    'pet'      => 'Pet Fee',
-    'darts'    => 'Darts Game',
-    'billiard' => 'Billiard'
-];
+// Fetch all addons for names and current prices
+$addon_info = [];
+$addons_res = $conn->query("SELECT id, name, price FROM addons");
+while ($row = $addons_res->fetch_assoc()) {
+    $addon_info[$row['id']] = [
+        'name' => $row['name'],
+        'price' => floatval($row['price'])
+    ];
+}
+
+// Fetch special dates for surcharge
+$special_dates = [];
+$sd_res = $conn->query("SELECT setting_value FROM site_settings WHERE setting_key = 'special_dates' LIMIT 1");
+if ($sd_res && $sd_row = $sd_res->fetch_assoc()) {
+    $special_dates = array_map('trim', explode(',', $sd_row['setting_value']));
+}
+
+// Calculate surcharge again for display
+$booking_date = $reservation['booking_date'];
+$day_of_week = date('w', strtotime($booking_date));
+$is_weekend = ($day_of_week == 0 || $day_of_week == 5 || $day_of_week == 6);
+$is_holiday = in_array($booking_date, $special_dates);
+$surcharge = ($is_weekend || $is_holiday) ? 1000 : 0;
+
+$addons_booked = json_decode($reservation['addons_json'], true) ?: [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -101,21 +109,45 @@ $addon_names = [
             background: #f8f9fa;
             padding: 20px;
             border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: center;
         }
 
         .summary-header h2 {
             margin: 0;
             font-size: 20px;
             color: #333;
+            margin-bottom: 10px;
+        }
+
+        .ref-container {
+            background: #f0fdf4;
+            border: 2px dashed #4CAF50;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .ref-label {
+            display: block;
+            font-size: 12px;
+            color: #4CAF50;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .ref-number {
-            font-weight: bold;
-            color: #4CAF50;
-            font-size: 18px;
+            font-weight: 800;
+            color: #166534;
+            font-size: 24px;
+            display: block;
+            margin: 5px 0;
+        }
+
+        .ref-note {
+            font-size: 13px;
+            color: #166534;
+            font-style: italic;
         }
 
         .summary-body {
@@ -201,11 +233,6 @@ $addon_names = [
             color: #856404;
         }
 
-        .payment-instructions p {
-            margin-bottom: 5px;
-            color: #856404;
-        }
-
         .action-buttons {
             display: flex;
             gap: 15px;
@@ -213,51 +240,55 @@ $addon_names = [
             justify-content: center;
         }
 
-        .action-buttons .btn-print,
-        .action-buttons .btn-print i {
-            background: #292929ff;
-            color: #ffffff !important;
+        .receipt-header {
+            display: none;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
         }
 
-        .btn-home {
-            background: #4CAF50;
+        .receipt-header h1 {
+            margin: 0;
+            font-size: 24px;
         }
 
         @media print {
-
-            .thank-you-banner,
-            .action-buttons {
-                display: none;
+            body { background: white; color: black; }
+            .success-wrapper { margin: 0; padding: 0; max-width: 100%; }
+            .thank-you-banner, .action-buttons, .uploader-section, .payment-instructions, .ref-note {
+                display: none !important;
             }
-
-            .success-wrapper {
-                margin: 0;
-                width: 100%;
-            }
-
-            .summary-card {
-                box-shadow: none;
-                border: none;
-            }
+            .summary-card { box-shadow: none; border: 1px solid #ccc; }
+            .receipt-header { display: block; }
+            .summary-header { border-bottom: 1px solid #333; }
+            .ref-container { border: 1px solid #333; background: none; }
+            .summary-body h3 { color: black; border-bottom: 1px solid #333; }
+            .price-row.downpayment { background: none; color: black; border: 1px solid #333; }
         }
     </style>
 </head>
 
 <body>
     <div class="success-wrapper">
+        <div class="receipt-header">
+            <h1>CK RESORT</h1>
+            <p>Official Reservation Receipt</p>
+        </div>
+
         <div class="thank-you-banner">
             <i class="fas fa-check-circle"></i>
             <h1>Thank You!</h1>
-            <p>Your reservation request for <strong>
-                    <?php echo htmlspecialchars($reservation['event_title'] ?? ''); ?>
-                </strong> has been submitted.</p>
+            <p>Your reservation request has been submitted.</p>
         </div>
 
         <div class="summary-card">
             <div class="summary-header">
                 <h2>Reservation Details</h2>
-                <div class="ref-number">Ref: #
-                    <?php echo $res_id; ?>
+                <div class="ref-container">
+                    <span class="ref-label">REFERENCE NUMBER</span>
+                    <span class="ref-number">#<?php echo $res_id; ?></span>
+                    <span class="ref-note">Please remember this Reference Number to check your reservation status.</span>
                 </div>
             </div>
 
@@ -277,10 +308,6 @@ $addon_names = [
                         <span><?php echo htmlspecialchars($reservation['phone'] ?? ''); ?></span>
                     </div>
                     <div class="info-item">
-                        <label>Alt. Phone</label>
-                        <span><?php echo htmlspecialchars($reservation['alt_phone'] ?: 'N/A'); ?></span>
-                    </div>
-                    <div class="info-item">
                         <label>Company/Organization</label>
                         <span><?php echo htmlspecialchars($reservation['company'] ?: 'Personal'); ?></span>
                     </div>
@@ -288,10 +315,6 @@ $addon_names = [
 
                 <h3>Event Details</h3>
                 <div class="info-grid">
-                    <div class="info-item">
-                        <label>Event Title</label>
-                        <span><?php echo htmlspecialchars($reservation['event_title']); ?></span>
-                    </div>
                     <div class="info-item">
                         <label>Event Date</label>
                         <span><?php echo date('F j, Y', strtotime($reservation['booking_date'])); ?></span>
@@ -317,55 +340,60 @@ $addon_names = [
                 <div class="price-breakdown">
                     <h3>Cost Summary</h3>
                     <?php
-                    // Calculate base rate again for display or just show total if we didn't store base separately
-                    // Since we have total_price, let's show breakdown
                     $total = floatval($reservation['total_price']);
-                    $addons = json_decode($reservation['addons_json'], true) ?: [];
                     $addons_sum = 0;
-                    foreach ($addons as $key => $qty) {
-                        $p = is_numeric($qty) ? intval($qty) * $addon_prices[$key] : $addon_prices[$key];
-                        $addons_sum += $p;
-                        echo '<div class="price-row">
-                                <span>' . $addon_names[$key] . ' ' . (is_numeric($qty) ? '(x' . $qty . ')' : '') . '</span>
-                                <span>P' . number_format($p) . '</span>
-                             </div>';
+                    
+                    // 1. Base Rate (Event Name)
+                    // We calculate it as total - addons - surcharge
+                    foreach ($addons_booked as $id => $qty) {
+                        if (isset($addon_info[$id])) {
+                            $price = $addon_info[$id]['price'] * (is_numeric($qty) ? intval($qty) : 1);
+                            $addons_sum += $price;
+                        }
                     }
-                    $base_rate = $total - $addons_sum;
+                    $base_rate = $total - $addons_sum - $surcharge;
                     ?>
+                    
                     <div class="price-row">
-                        <span>Base Rate</span>
-                        <span>P
-                            <?php echo number_format($base_rate); ?>
-                        </span>
+                        <span>Base Rate (<?php echo htmlspecialchars($reservation['event_base_name']); ?>)</span>
+                        <span>P<?php echo number_format($base_rate); ?></span>
                     </div>
+
+                    <?php foreach ($addons_booked as $id => $qty): ?>
+                        <?php if (isset($addon_info[$id])): ?>
+                            <?php $price = $addon_info[$id]['price'] * (is_numeric($qty) ? intval($qty) : 1); ?>
+                            <div class="price-row">
+                                <span><?php echo htmlspecialchars($addon_info[$id]['name']); ?> <?php echo is_numeric($qty) ? "(x$qty)" : ""; ?></span>
+                                <span>P<?php echo number_format($price); ?></span>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+
+                    <?php if ($surcharge > 0): ?>
+                        <div class="price-row" style="color: #e11d48;">
+                            <span>Weekend/Holiday Surcharge</span>
+                            <span>P<?php echo number_format($surcharge); ?></span>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="price-row total">
-                        <span>Total Price</span>
-                        <span>P
-                            <?php echo number_format($total); ?>
-                        </span>
+                        <span>Grand Total</span>
+                        <span>P<?php echo number_format($total); ?></span>
                     </div>
                     <div class="price-row downpayment">
                         <span>Required Downpayment (50%)</span>
-                        <span>P
-                            <?php echo number_format($total * 0.5); ?>
-                        </span>
+                        <span>P<?php echo number_format($total * 0.5); ?></span>
                     </div>
                 </div>
 
                 <div class="payment-instructions">
                     <h3><i class="fas fa-info-circle"></i> Next Steps</h3>
-                    <?php if ($reservation['payment_method'] === 'GCash'): ?>
-                        <p>Please send your downpayment to <strong>0917-123-4567</strong> (GCash).</p>
-                    <?php else: ?>
-                        <p>Please transfer your downpayment to <strong>BPI: 1234-5678-90</strong>.</p>
-                    <?php endif; ?>
-                    <p>Once paid, please upload a screenshot of your receipt below for verification.</p>
+                    <p>Please upload your payment receipt below to confirm your booking.</p>
                 </div>
 
                 <div class="uploader-section" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
                     <h3 style="text-align: center; color: #333;"><i class="fas fa-file-invoice"></i> Upload Payment Receipt</h3>
                     <?php 
-                    // Set the reservation ID for the uploader
                     $_GET['res_id'] = $res_id;
                     include '../uploader/index.php'; 
                     ?>
@@ -374,9 +402,15 @@ $addon_names = [
         </div>
 
         <div class="action-buttons">
-            <button onclick="window.print()" class="btn btn-print"><i class="fas fa-print"></i> Print Summary</button>
-            <a href="check_status.php" class="btn btn-home" style="background:#3b82f6"><i class="fas fa-search"></i> Check Status</a>
-            <a href="/index.php" class="btn btn-home"><i class="fas fa-home"></i> Back to Home</a>
+            <button onclick="window.print()" class="btn btn-print" style="background: #292929; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-print"></i> Print Summary
+            </button>
+            <a href="check_status.php" class="btn" style="background:#3b82f6; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <i class="fas fa-search"></i> Check Status
+            </a>
+            <a href="/index.php" class="btn" style="background: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
         </div>
     </div>
 </body>
