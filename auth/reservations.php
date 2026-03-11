@@ -587,8 +587,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                         <div class="detail-content">
                             <p><strong>Event:</strong> <?php echo htmlspecialchars($single_reservation['event_name'] ?? ''); ?>
                             </p>
-                            <p><strong>Event Title:</strong>
-                                <?php echo htmlspecialchars($single_reservation['event_title'] ?? ''); ?></p>
+
                             <p><strong>Event Type:</strong>
                                 <?php echo htmlspecialchars($single_reservation['event_type'] ?? ''); ?></p>
                             <p><strong>Date:</strong>

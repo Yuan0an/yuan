@@ -13,8 +13,6 @@ function sendBookingReceipt($email, $ref, $event_title, $event_type, $tour_type,
         $body = "<strong>Booking Reservation</strong><br><br>";
         $body .= "Thank you for booking with us.<br><br>";
         $body .= "<strong>Booking Reference Number:</strong> [$ref]<br><br>";
-        $body .= "<strong>Event Title:</strong> [$event_title]<br><br>";
-        
         $body .= "<strong>Booking Details:</strong><br>";
         $body .= "Event Type: [$event_type]<br>";
         $body .= "Tour Type: [$tour_type]<br>";

@@ -70,8 +70,6 @@ function sendBookingConfirmationEmail(
         $body = "Booking Reservation\n\n";
         $body .= "Thank you for booking with us!\n\n";
         $body .= "Booking Reference No: " . $ref_number . "\n\n";
-        $body .= "Event Title: " . htmlspecialchars($event_title) . "\n\n";
-        
         $body .= "Booking Details:\n";
         $body .= "Event Name: " . htmlspecialchars($event_title) . "\n";
         $body .= "Event Type: " . htmlspecialchars($event_type) . "\n";
@@ -130,7 +128,7 @@ function sendBookingApprovalEmail(
         $time_display = date('h:i A', strtotime($start_time));
 
         $body = "<h2>Great news, " . htmlspecialchars($guest_name) . "!</h2>";
-        $body .= "<p>Your reservation request for <strong>" . htmlspecialchars($event_title) . "</strong> has been <strong>Approved</strong>.</p>";
+        $body .= "<p>Your reservation request has been <strong>Approved</strong>.</p>";
         $body .= "<p><strong>Reservation ID:</strong> " . $reservation_id . "<br>";
         $body .= "<strong>Date:</strong> " . $booking_date_display . "<br>";
         $body .= "<strong>Check-in Time:</strong> " . $time_display . "</p>";
