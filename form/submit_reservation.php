@@ -78,10 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // we'll rely on the frontend value for now as it's the source of truth for the user's expectation.
 
     // 1. Handle Customer (Find existing or Create new)
-    // NOTE: We do NOT update an existing customer's name/details to avoid silently
-    // renaming all previous reservations that share the same email address.
-    $cust_stmt = $conn->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
-    $cust_stmt->bind_param("s", $email);
+    // Match by BOTH email AND full name. This allows a user to make bookings under
+    // different names using the same email, keeping their reservations separate and
+    // preventing old reservations from displaying the wrong name.
+    $cust_stmt = $conn->prepare("SELECT id FROM customers WHERE email = ? AND full_name = ? LIMIT 1");
+    $cust_stmt->bind_param("ss", $email, $full_name);
     $cust_stmt->execute();
     $cust_res = $cust_stmt->get_result();
 
