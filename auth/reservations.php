@@ -603,7 +603,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
 
                     <div class="detail-card">
                         <h3><i class="fas fa-receipt"></i> Itemized Breakdown</h3>
-                        <div class="detail-content">
+                        <div class="detail-content" style="padding: 10px;">
                             <?php
                             $addons_booked = json_decode($single_reservation['addons_json'], true) ?: [];
                             $total = floatval($single_reservation['total_price']);
@@ -622,25 +622,44 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             }
 
                             $addons_sum = 0;
+                            $addons_html = '';
                             foreach ($addons_booked as $name => $qty) {
                                 if (isset($addon_by_name[$name])) {
                                     $info = $addon_by_name[$name];
                                     $p = is_numeric($qty) ? intval($qty) * $info['price'] : $info['price'];
                                     $addons_sum += $p;
-                                    echo '<p><strong>' . htmlspecialchars($info['name']) . (is_numeric($qty) ? " (x$qty)" : '') . ':</strong> ₱' . number_format($p) . '</p>';
+                                    $addons_html .= '<div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #475569; font-size: 0.95rem;">
+                                        <span>' . htmlspecialchars($info['name']) . (is_numeric($qty) ? " (x$qty)" : '') . '</span>
+                                        <strong>₱' . number_format($p) . '</strong>
+                                    </div>';
                                 }
                             }
                             $base_rate = $total - $addons_sum - $surcharge;
-                            echo '<p><strong>Base Rate (' . htmlspecialchars($single_reservation['event_type'] ?? 'Unknown Event') . '):</strong> ₱' . number_format($base_rate) . '</p>';
-                            if ($surcharge > 0): ?>
-                                <p style="color: #e11d48;"><strong>Weekend/Holiday Surcharge:</strong> ₱<?php echo number_format($surcharge); ?></p>
+                            ?>
+                            
+                            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #475569; font-size: 0.95rem;">
+                                <span>Base Rate (<?php echo htmlspecialchars($single_reservation['event_type'] ?? 'Unknown Event'); ?>)</span>
+                                <strong>₱<?php echo number_format($base_rate); ?></strong>
+                            </div>
+                            
+                            <?php echo $addons_html; ?>
+                            
+                            <?php if ($surcharge > 0): ?>
+                                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #e11d48; font-size: 0.95rem;">
+                                    <span>Weekend/Holiday Surcharge</span>
+                                    <strong>₱<?php echo number_format($surcharge); ?></strong>
+                                </div>
                             <?php endif; ?>
-                            <p style="font-size: 1.1rem; border-top: 2px solid #eee; padding-top: 10px; margin-top: 10px;">
-                                <strong>Grand Total:</strong> ₱<?php echo number_format($total); ?>
-                            </p>
-                            <p style="color: #166534; font-weight: 600;">
-                                <strong>Downpayment (50%):</strong> ₱<?php echo number_format($total * 0.5); ?>
-                            </p>
+                            
+                            <div style="display: flex; justify-content: space-between; padding: 15px 0 10px; border-bottom: 1px dashed #cbd5e1; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+                                <span>Total Price</span>
+                                <span>₱<?php echo number_format($total); ?></span>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; padding: 10px 0 0; color: #166534; font-size: 0.95rem; font-weight: 500;">
+                                <span>Downpayment Required (50%)</span>
+                                <strong>₱<?php echo number_format($total * 0.5); ?></strong>
+                            </div>
                         </div>
                     </div>
 
