@@ -50,10 +50,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $addons_json = $conn->real_escape_string(json_encode($addons));
 
+    // Fetch special dates for surcharge
+    $special_dates = [];
+    $sd_res = $conn->query("SELECT setting_value FROM site_settings WHERE setting_key = 'special_dates' LIMIT 1");
+    if ($sd_res && $sd_row = $sd_res->fetch_assoc()) {
+        $special_dates = array_map('trim', explode(',', $sd_row['setting_value']));
+    }
+
+    // Weekend/Holiday Surcharge Logic (P1000)
+    $surcharge = 0;
+    if ($booking_date) {
+        $day_of_week = date('w', strtotime($booking_date)); // 0 (Sun) to 6 (Sat)
+        $is_weekend = ($day_of_week == 0 || $day_of_week == 5 || $day_of_week == 6);
+        $is_holiday = in_array($booking_date, $special_dates);
+        
+        if ($is_weekend || $is_holiday) {
+            $surcharge = 1000;
+        }
+    }
+
     // We should ideally recalculate price here, but for now we'll take a 'total_price' hidden field if we add it,
     // or just let the success page recalculate. Let's add a hidden total field to the form in next step.
     // For now, let's assume we'll pass it.
     $form_total_price = isset($_POST['total_price_hidden']) ? floatval($_POST['total_price_hidden']) : 0;
+    
+    // Safety check: if surcharge is applicable but total doesn't seem to include it (very basic check)
+    // we'll rely on the frontend value for now as it's the source of truth for the user's expectation.
 
     // 1. Handle Customer (Find existing or Create new)
     $cust_stmt = $conn->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");

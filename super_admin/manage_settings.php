@@ -62,6 +62,14 @@ while ($row = $res->fetch_assoc()) {
                 <textarea name="settings[cancellation_policy]" rows="6"><?php echo htmlspecialchars($settings['cancellation_policy'] ?? ''); ?></textarea>
             </div>
 
+            <div class="section-title">Special Pricing</div>
+
+            <div class="form-group">
+                <label>Special Dates / Holidays (Comma separated YYYY-MM-DD)</label>
+                <input type="text" name="settings[special_dates]" value="<?php echo htmlspecialchars($settings['special_dates'] ?? ''); ?>" placeholder="e.g. 2024-12-25, 2025-01-01">
+                <p style="font-size: 0.85rem; color: #64748b; margin-top: 0.5rem;">The system will automatically add P1,000 for these dates and every Fri/Sat/Sun.</p>
+            </div>
+
             <div class="section-title">Footer Content</div>
 
             <div class="form-group">

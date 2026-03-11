@@ -246,6 +246,10 @@ while ($row = $settings_res->fetch_assoc()) {
                             <span>Add-ons Total</span>
                             <span id="summary-addons-total">P0.00</span>
                         </div>
+                        <div class="summary-item" id="summary-surcharge-row" style="display: none; color: #e11d48; font-weight: 600;">
+                            <span>Weekend/Holiday Surcharge</span>
+                            <span id="summary-surcharge">P1,000</span>
+                        </div>
                         <div class="summary-item total-row">
                             <span>Grand Total</span>
                             <span id="summary-grand-total">P0.00</span>
@@ -363,6 +367,12 @@ while ($row = $settings_res->fetch_assoc()) {
         let selectedEventEnd = '';
         let selectedEventPricing = null;
         let isOvernight = false;
+
+        let specialDates = <?php 
+            $sd = $settings['special_dates'] ?? '';
+            $sd_arr = array_map('trim', explode(',', $sd));
+            echo json_encode(array_filter($sd_arr)); 
+        ?>;
 
         $(document).ready(function () {
             let currentMonth = new Date().getMonth() + 1;
@@ -706,13 +716,41 @@ while ($row = $settings_res->fetch_assoc()) {
                 }
             });
 
-            // 3. Update UI
-            let grandTotal = baseRate + addonsTotal;
+            // 3. Weekend/Holiday Surcharge (P1000)
+            let surcharge = 0;
+            if (selectedDate) {
+                // Get day of week (0=Sun, 5=Fri, 6=Sat)
+                let day = selectedDate.getDay();
+                let isWeekend = (day === 0 || day === 5 || day === 6);
+                
+                // Get YYYY-MM-DD string
+                let y = selectedDate.getFullYear();
+                let m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                let d = String(selectedDate.getDate()).padStart(2, '0');
+                let dateStr = `${y}-${m}-${d}`;
+                
+                let isHoliday = specialDates.includes(dateStr);
+                
+                if (isWeekend || isHoliday) {
+                    surcharge = 1000;
+                }
+            }
+
+            // 4. Update UI
+            let grandTotal = baseRate + addonsTotal + surcharge;
             let downpayment = grandTotal * 0.5;
 
             $('#summary-event-type').text(selectedEventName);
             $('#summary-base-rate').text('P' + baseRate.toLocaleString());
             $('#summary-addons-total').text('P' + addonsTotal.toLocaleString());
+            
+            if (surcharge > 0) {
+                $('#summary-surcharge-row').show();
+                $('#summary-surcharge').text('P' + surcharge.toLocaleString());
+            } else {
+                $('#summary-surcharge-row').hide();
+            }
+
             $('#summary-grand-total').text('P' + grandTotal.toLocaleString());
             $('#summary-downpayment').text('P' + downpayment.toLocaleString());
 
