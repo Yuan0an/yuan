@@ -18,8 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $company = isset($_POST['company']) ? $conn->real_escape_string(trim($_POST['company'])) : '';
 
     // Event Details
-    $event_title = $conn->real_escape_string(trim($_POST['event_title']));
     $event_type = $conn->real_escape_string(trim($_POST['event_type']));
+    if ($event_type === 'Other' && isset($_POST['other_event_type'])) {
+        $event_type = $conn->real_escape_string(trim($_POST['other_event_type']));
+    }
+    // We use the event_type as the title since the title field was removed from the form
+    $event_title = $event_type;
 
     // Payment Method
     $payment_method = $conn->real_escape_string(trim($_POST['payment_method']));

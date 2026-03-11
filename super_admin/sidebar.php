@@ -21,6 +21,9 @@
         <a href="manage_admins.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'manage_admins.php' ? 'active' : ''; ?>">
             <i class="fas fa-users-cog"></i> Admin Credentials
         </a>
+        <a href="manage_settings.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'manage_settings.php' ? 'active' : ''; ?>">
+            <i class="fas fa-cog"></i> Site Settings
+        </a>
         <a href="system_reset.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'system_reset.php' ? 'active' : ''; ?>">
             <i class="fas fa-sync-alt"></i> Reset Reservations
         </a>

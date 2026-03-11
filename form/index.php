@@ -2,8 +2,8 @@
 require 'config.php';
 include_once __DIR__ . '/../includes/header.php';
 
-// Get all events
-$sql = "SELECT id, name, start_time, end_time, max_persons, is_overnight, pricing_logic FROM events";
+// Get all events ordered by sort_order
+$sql = "SELECT * FROM events ORDER BY sort_order ASC";
 $result = $conn->query($sql);
 
 // Get all active addons
@@ -20,6 +20,14 @@ $pm_result = $conn->query($pm_sql);
 $payment_methods = [];
 while ($row = $pm_result->fetch_assoc()) {
     $payment_methods[] = $row;
+}
+
+// Get site settings
+$settings = [];
+$settings_sql = "SELECT * FROM site_settings";
+$settings_res = $conn->query($settings_sql);
+while ($row = $settings_res->fetch_assoc()) {
+    $settings[$row['setting_key']] = $row['setting_value'];
 }
 ?>
 
@@ -160,21 +168,23 @@ while ($row = $pm_result->fetch_assoc()) {
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group">
-                            <label for="event_title">Event Name/Title *</label>
-                            <input type="text" id="event_title" name="event_title" required>
-                        </div>
-
-                        <div class="form-group">
+                        <div class="form-group full-width">
                             <label for="event_type">Type of Event *</label>
-                            <select id="event_type" name="event_type" required>
+                            <select id="event_type" name="event_type" required onchange="checkEventType(this)">
                                 <option value="">Select event type</option>
                                 <option value="Corporate">Corporate Event</option>
                                 <option value="Birthday">Birthday Party</option>
                                 <option value="Wedding">Wedding</option>
                                 <option value="Family">Family Gathering</option>
-                                <option value="Other">Other</option>
+                                <option value="Other">Other (Please specify)</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="other_event_type_row" style="display:none;">
+                        <div class="form-group full-width">
+                            <label for="other_event_type">Please Specify Event Type *</label>
+                            <input type="text" id="other_event_type" name="other_event_type">
                         </div>
                     </div>
 
@@ -266,6 +276,12 @@ while ($row = $pm_result->fetch_assoc()) {
                                 <div class="payment-card-details">
                                     <?php echo nl2br(htmlspecialchars($pm['details'])); ?>
                                 </div>
+                                <?php if ($pm['qr_code_url']): ?>
+                                    <div class="payment-qr" id="qr_<?php echo $pm['id']; ?>" style="display:none; margin-top: 10px; text-align: center;">
+                                        <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 5px;">Scan to Pay:</p>
+                                        <img src="../<?php echo $pm['qr_code_url']; ?>" alt="QR Code" style="max-width: 150px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -278,14 +294,14 @@ while ($row = $pm_result->fetch_assoc()) {
                     <div class="terms-group">
                         <input type="checkbox" id="terms" name="terms" required>
                         <label for="terms">
-                            I agree to the <a href="#" onclick="openModal('terms.html', 'Terms & Conditions'); return false;">Terms & Conditions</a>
+                            I agree to the <a href="javascript:void(0)" onclick="openContentModal('Terms & Conditions', `<?php echo addslashes(nl2br(htmlspecialchars($settings['terms_conditions'] ?? ''))); ?>`)">Terms & Conditions</a>
                         </label>
                     </div>
 
                     <div class="terms-group">
                         <input type="checkbox" id="cancellation" name="cancellation" required>
                         <label for="cancellation">
-                            I understand the <a href="#" onclick="openModal('cancellation.html', 'Cancellation Policy'); return false;">Cancellation Policy</a>
+                            I understand the <a href="javascript:void(0)" onclick="openContentModal('Cancellation Policy', `<?php echo addslashes(nl2br(htmlspecialchars($settings['cancellation_policy'] ?? ''))); ?>`)">Cancellation Policy</a>
                         </label>
                     </div>
                 </div>
@@ -295,13 +311,32 @@ while ($row = $pm_result->fetch_assoc()) {
                 <!-- Form Buttons -->
                 <div class="form-buttons">
                     <button type="button" class="btn cancel-btn" id="cancelBtn">Cancel</button>
-                    <button type="submit" class="btn submit-btn" id="submitBtn" disabled>Submit Reservation
-                        Request</button>
+                    <button type="submit" class="btn submit-btn" id="submitBtn" disabled>Submit Reservation Request</button>
                 </div>
             </form>
         </div>
-        </div>
     </div>
+
+    <!-- Website Footer -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>About Our Resort</h4>
+                <p><?php echo nl2br(htmlspecialchars($settings['footer_about'] ?? '')); ?></p>
+            </div>
+            <div class="footer-section">
+                <h4>Find Us</h4>
+                <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($settings['footer_address'] ?? ''); ?></p>
+            </div>
+            <div class="footer-section">
+                <h4>Contact Us</h4>
+                <p><i class="fas fa-phone-alt"></i> <?php echo htmlspecialchars($settings['footer_contact'] ?? ''); ?></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; <?php echo date('Y'); ?> CK Resort. All rights reserved.
+        </div>
+    </footer>
 
     <!-- Generic Modal -->
     <div id="infoModal" class="modal-overlay">
@@ -310,25 +345,23 @@ while ($row = $pm_result->fetch_assoc()) {
                 <h3 class="modal-title" id="modalTitle">Page Title</h3>
                 <button type="button" class="modal-close" onclick="closeModal()">&times;</button>
             </div>
-            <iframe id="modalIframe" class="modal-iframe" src=""></iframe>
+            <div id="modalBody" style="padding: 20px; max-height: 70vh; overflow-y: auto; line-height: 1.6;"></div>
         </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         // Modal Functions
-        function openModal(url, title) {
+        function openContentModal(title, content) {
             $('#modalTitle').text(title);
-            $('#modalIframe').attr('src', url);
+            $('#modalBody').html(content);
             $('#infoModal').css('display', 'flex');
-            // Prevent body scrolling
             $('body').css('overflow', 'hidden');
         }
 
         function closeModal() {
             $('#infoModal').hide();
-            $('#modalIframe').attr('src', '');
-            // Restore body scrolling
+            $('#modalBody').html('');
             $('body').css('overflow', '');
         }
 
@@ -363,8 +396,24 @@ while ($row = $pm_result->fetch_assoc()) {
                 selectedEventName = $(this).data('name');
                 selectedEventStart = $(this).data('start');
                 selectedEventEnd = $(this).data('end');
-                selectedEventPricing = $(this).data('pricing');
+                
+                // Ensure pricing is parsed as an object
+                let rawPricing = $(this).attr('data-pricing');
+                try {
+                    selectedEventPricing = typeof rawPricing === 'string' ? JSON.parse(rawPricing) : rawPricing;
+                } catch(e) {
+                    console.error("Pricing parse error:", e);
+                    selectedEventPricing = {tiers: []};
+                }
+
                 isOvernight = $(this).data('overnight') == 1;
+                let maxGuests = $(this).data('max');
+
+                // Update guests input max
+                $('#guests').attr('max', maxGuests);
+                if (parseInt($('#guests').val()) > maxGuests) {
+                    $('#guests').val(maxGuests);
+                }
 
                 loadCalendar();
                 $('#timeSlots').hide();
@@ -607,16 +656,44 @@ while ($row = $pm_result->fetch_assoc()) {
             // Uncheck all radios
             $('.payment-grid input[type="radio"]').prop('checked', false);
 
+            // Hide all QR codes
+            $('.payment-qr').hide();
+
             // Select the clicked card and its radio button
             $('#' + id).prop('checked', true);
-            $('#' + id).closest('.payment-card').addClass('selected');
+            let card = $('#' + id).closest('.payment-card');
+            card.addClass('selected');
+            
+            // Show QR if exists
+            card.find('.payment-qr').show();
+        }
+
+        function checkEventType(select) {
+            const otherRow = document.getElementById('other_event_type_row');
+            const otherInput = document.getElementById('other_event_type');
+            if (select.value === 'Other') {
+                otherRow.style.display = 'block';
+                otherInput.setAttribute('required', 'required');
+            } else {
+                otherRow.style.display = 'none';
+                otherInput.removeAttribute('required');
+            }
         }
 
         // Pricing Calculation Logic
         function calculateTotal() {
             if (!selectedEventName) return;
 
-            let pax = parseInt($('#guests').val()) || 0;
+            let guestInput = $('#guests');
+            let maxCapacity = parseInt(guestInput.attr('max')) || 999;
+            let pax = parseInt(guestInput.val()) || 0;
+
+            // Cap the input at max capacity
+            if (pax > maxCapacity) {
+                pax = maxCapacity;
+                guestInput.val(maxCapacity);
+            }
+
             let baseRate = 0;
 
             // 1. Calculate Base Rate

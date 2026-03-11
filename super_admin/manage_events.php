@@ -43,15 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$events = $conn->query("SELECT * FROM events");
+$events = $conn->query("SELECT * FROM events ORDER BY sort_order ASC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Manage Event Types</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         .event-card { background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
         .btn { padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
@@ -63,6 +64,18 @@ $events = $conn->query("SELECT * FROM events");
         label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
         input, select, textarea { width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; }
         .pricing-help { font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; }
+        .drag-handle {
+            cursor: move;
+            color: #ccc;
+            padding: 0 10px;
+        }
+        .drag-handle:hover {
+            color: #666;
+        }
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body>
@@ -80,16 +93,19 @@ $events = $conn->query("SELECT * FROM events");
             <div style="background: #dcfce7; color: #166534; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;"><?php echo $message; ?></div>
         <?php endif; ?>
 
-        <div class="event-list">
+        <div class="event-list" id="sortable-events">
             <?php while($row = $events->fetch_assoc()): ?>
-                <div class="event-card">
-                    <div>
-                        <h3 style="margin:0;"><?php echo htmlspecialchars($row['name']); ?></h3>
-                        <p style="margin:5px 0; color:#64748b;">
-                            <i class="far fa-clock"></i> <?php echo date('g:i A', strtotime($row['start_time'])); ?> - <?php echo date('g:i A', strtotime($row['end_time'])); ?>
-                            <?php if ($row['is_overnight']): ?> <span style="color:#3b82f6;">(Overnight)</span><?php endif; ?>
-                            | <i class="fas fa-users"></i> Max: <?php echo $row['max_persons']; ?>
-                        </p>
+                <div class="event-card" data-id="<?php echo $row['id']; ?>">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="drag-handle"><i class="fas fa-grip-lines"></i></div>
+                        <div>
+                            <h3 style="margin:0;"><?php echo htmlspecialchars($row['name']); ?></h3>
+                            <p style="margin:5px 0; color:#64748b;">
+                                <i class="far fa-clock"></i> <?php echo date('g:i A', strtotime($row['start_time'])); ?> - <?php echo date('g:i A', strtotime($row['end_time'])); ?>
+                                <?php if ($row['is_overnight']): ?> <span style="color:#3b82f6;">(Overnight)</span><?php endif; ?>
+                                | <i class="fas fa-users"></i> Max: <?php echo $row['max_persons']; ?>
+                            </p>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-primary" onclick='editEvent(<?php echo json_encode($row); ?>)'>Edit</button>
@@ -171,6 +187,38 @@ $events = $conn->query("SELECT * FROM events");
             document.getElementById('eventOvernight').checked = data.is_overnight == 1;
             document.getElementById('eventPricing').value = data.pricing_logic || '';
         }
+        
+        // Sortable Initialization
+        $(document).ready(function() {
+            const el = document.getElementById('sortable-events');
+            const sortable = Sortable.create(el, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    const order = [];
+                    $('#sortable-events tr').each(function(index) {
+                        order.push({
+                            id: $(this).data('id'),
+                            sort_order: index
+                        });
+                    });
+
+                    // Save order via AJAX
+                    $.ajax({
+                        url: 'update_event_order.php',
+                        method: 'POST',
+                        data: { order: order },
+                        success: function(response) {
+                            console.log('Order updated:', response);
+                        },
+                        error: function() {
+                            alert('Failed to update order');
+                        }
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>

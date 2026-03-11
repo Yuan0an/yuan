@@ -28,6 +28,8 @@ try {
     $ensureColumn('payments', 'time_uploaded', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
     $ensureColumn('admins', 'role', "VARCHAR(20) DEFAULT 'admin' AFTER email");
     $ensureColumn('events', 'pricing_logic', "TEXT AFTER is_overnight");
+    $ensureColumn('events', 'sort_order', "INT DEFAULT 0");
+    $ensureColumn('payment_methods', 'qr_code_url', "VARCHAR(255) AFTER details");
 
     // 2. Create new tables if missing
     $conn->query("CREATE TABLE IF NOT EXISTS addons (
@@ -45,11 +47,30 @@ try {
         name VARCHAR(100) NOT NULL,
         icon VARCHAR(50),
         details TEXT,
+        qr_code_url VARCHAR(255),
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
+    $conn->query("CREATE TABLE IF NOT EXISTS site_settings (
+        setting_key VARCHAR(50) PRIMARY KEY,
+        setting_value TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )");
+
     // 3. Seed default data if empty
+    $check_settings = $conn->query("SELECT setting_key FROM site_settings LIMIT 1");
+    if ($check_settings && $check_settings->num_rows === 0) {
+        $terms = "1. Respect the venue property.\n2. No smoking inside rooms.\n3. Keep noise levels reasonable after 10 PM.";
+        $cancel = "1. Full refund if cancelled 7 days before.\n2. 50% refund if cancelled 3 days before.\n3. No refund for same-day cancellations.";
+        $footer_about = "Our resort provides a premium booking experience for your special events.";
+        $footer_address = "123 Resort Drive, Event City, Philippines";
+        $footer_contact = "Email: info@ckresort.com | Phone: +63 912 345 6789";
+        
+        $stmt = $conn->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('terms_conditions', ?), ('cancellation_policy', ?), ('footer_about', ?), ('footer_address', ?), ('footer_contact', ?)");
+        $stmt->bind_param("sssss", $terms, $cancel, $footer_about, $footer_address, $footer_contact);
+        $stmt->execute();
+    }
     $check_addons = $conn->query("SELECT id FROM addons LIMIT 1");
     if ($check_addons && $check_addons->num_rows === 0) {
         $conn->query("INSERT INTO addons (name, price, type) VALUES ('LPGas', 250, 'counter'), ('Butane', 150, 'counter'), ('Bonfire', 500, 'counter'), ('Pet Fee', 200, 'counter'), ('Darts Game', 250, 'checkbox'), ('Billiard', 500, 'checkbox')");

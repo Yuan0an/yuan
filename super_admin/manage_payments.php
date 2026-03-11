@@ -11,14 +11,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $icon = $_POST['icon'];
         $details = $_POST['details'];
         $is_active = isset($_POST['is_active']) ? 1 : 0;
+        $qr_url = $_POST['existing_qr_code'] ?? '';
+
+        if (isset($_FILES['qr_code']) && $_FILES['qr_code']['error'] === UPLOAD_ERR_OK) {
+            $upload_dir = '../uploads/qr_codes/';
+            if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+            $file_ext = pathinfo($_FILES['qr_code']['name'], PATHINFO_EXTENSION);
+            $file_name = uniqid('qr_') . '.' . $file_ext;
+            if (move_uploaded_file($_FILES['qr_code']['tmp_name'], $upload_dir . $file_name)) {
+                $qr_url = 'uploads/qr_codes/' . $file_name;
+            }
+        }
 
         if ($_POST['action'] === 'add') {
-            $stmt = $conn->prepare("INSERT INTO payment_methods (name, icon, details, is_active) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("sssi", $name, $icon, $details, $is_active);
+            $stmt = $conn->prepare("INSERT INTO payment_methods (name, icon, details, qr_code_url, is_active) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssssi", $name, $icon, $details, $qr_url, $is_active);
         } elseif ($_POST['action'] === 'edit') {
             $id = $_POST['id'];
-            $stmt = $conn->prepare("UPDATE payment_methods SET name=?, icon=?, details=?, is_active=? WHERE id=?");
-            $stmt->bind_param("sssii", $name, $icon, $details, $is_active, $id);
+            $stmt = $conn->prepare("UPDATE payment_methods SET name=?, icon=?, details=?, qr_code_url=?, is_active=? WHERE id=?");
+            $stmt->bind_param("ssssii", $name, $icon, $details, $qr_url, $is_active, $id);
         } elseif ($_POST['action'] === 'delete') {
             $id = $_POST['id'];
             $stmt = $conn->prepare("DELETE FROM payment_methods WHERE id=?");
@@ -80,6 +91,11 @@ $payments = $conn->query("SELECT * FROM payment_methods");
                             <div style="color:#64748b; font-size:0.9rem; margin-top:4px;">
                                 <?php echo nl2br(htmlspecialchars($row['details'])); ?>
                             </div>
+                            <?php if ($row['qr_code_url']): ?>
+                                <div style="margin-top: 8px;">
+                                    <span style="font-size: 0.8rem; color: #3b82f6;"><i class="fas fa-qrcode"></i> QR Code Attached</span>
+                                </div>
+                            <?php endif; ?>
                             <span class="status-badge <?php echo $row['is_active'] ? 'status-active' : 'status-inactive'; ?>" style="display:inline-block; margin-top:8px;">
                                 <?php echo $row['is_active'] ? 'Active' : 'Inactive'; ?>
                             </span>
@@ -101,9 +117,10 @@ $payments = $conn->query("SELECT * FROM payment_methods");
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle">Add Payment Method</h2>
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="action" id="formAction" value="add">
                 <input type="hidden" name="id" id="paymentId">
+                <input type="hidden" name="existing_qr_code" id="paymentExistingQr">
                 <div class="form-group">
                     <label>Name</label>
                     <input type="text" name="name" id="paymentName" required placeholder="e.g., GCash, BPI">
@@ -115,6 +132,13 @@ $payments = $conn->query("SELECT * FROM payment_methods");
                 <div class="form-group">
                     <label>Details (Displayed to customer)</label>
                     <textarea name="details" id="paymentDetails" rows="4" required placeholder="Account Name: ...\nNumber: ..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>QR Code (Optional)</label>
+                    <input type="file" name="qr_code" accept="image/*">
+                    <div id="qrPreview" style="margin-top: 10px; display: none;">
+                        <img src="" alt="QR Preview" style="max-width: 100px; border-radius: 4px;">
+                    </div>
                 </div>
                 <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
                     <input type="checkbox" name="is_active" id="paymentActive" style="width: auto;" checked>
@@ -148,6 +172,14 @@ $payments = $conn->query("SELECT * FROM payment_methods");
             document.getElementById('paymentIcon').value = data.icon;
             document.getElementById('paymentDetails').value = data.details;
             document.getElementById('paymentActive').checked = data.is_active == 1;
+            document.getElementById('paymentExistingQr').value = data.qr_code_url || '';
+            
+            if (data.qr_code_url) {
+                document.getElementById('qrPreview').style.display = 'block';
+                document.getElementById('qrPreview').querySelector('img').src = '../' + data.qr_code_url;
+            } else {
+                document.getElementById('qrPreview').style.display = 'none';
+            }
         }
     </script>
 </body>
