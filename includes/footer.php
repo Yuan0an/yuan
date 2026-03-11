@@ -25,33 +25,38 @@ if (isset($conn)) {
 
 <style>
 .site-footer-simple {
-    background-color: #1a1a1a;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: #ffffff;
-    padding: 40px 20px;
+    padding: 20px 0;
     font-family: 'Inter', sans-serif;
     text-align: center;
+    width: 100% !important;
+    margin-top: 60px;
+    box-sizing: border-box;
 }
 .footer-simple-container {
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 100%;
+    padding: 0 20px;
 }
 .footer-brand {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     letter-spacing: 1px;
 }
 .footer-address, .footer-contact {
-    font-size: 0.95rem;
-    color: #a0a0a0;
-    margin-bottom: 5px;
+    font-size: 0.85rem;
+    color: #cccccc;
+    margin-bottom: 3px;
 }
 .footer-bottom-simple {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #333;
-    font-size: 0.85rem;
-    color: #777;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    color: #999;
 }
 </style>
 <script src="/assets/js/carousel.js"></script>
