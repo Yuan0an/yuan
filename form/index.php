@@ -367,6 +367,7 @@ while ($row = $settings_res->fetch_assoc()) {
         let selectedEventEnd = '';
         let selectedEventPricing = null;
         let isOvernight = false;
+        let selectedDate = null;
 
         let specialDates = <?php 
             $sd = $settings['special_dates'] ?? '';
@@ -377,7 +378,6 @@ while ($row = $settings_res->fetch_assoc()) {
         $(document).ready(function () {
             let currentMonth = new Date().getMonth() + 1;
             let currentYear = new Date().getFullYear();
-            let selectedDate = null;
 
             // Event selection
             $('.event-item').click(function () {
@@ -765,14 +765,17 @@ while ($row = $settings_res->fetch_assoc()) {
 
         // Bind inputs to recalculate
         $(document).ready(function () {
-            $('#guests').on('input change', calculateTotal);
-            $('.counter-input, .addons-grid input[type="checkbox"]').on('input change', calculateTotal);
+            // Re-calculate whenever guests, counters, or checkboxes change
+            $(document).on('input change', '#guests, .counter-input, .addons-grid input[type="checkbox"]', function() {
+                calculateTotal();
+            });
             
             // Trigger initial calculation when form is shown
             const originalShowForm = showReservationForm;
             window.showReservationForm = function (date) {
                 originalShowForm(date);
-                calculateTotal();
+                // Simple delay to ensure DOM is ready/values are set
+                setTimeout(calculateTotal, 50); 
             };
         });
     </script>
