@@ -35,14 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Addon info for display
-$addon_prices = [
-    'lpg' => 250, 'butane' => 150, 'bonfire' => 500,
-    'pet' => 200, 'darts' => 250, 'billiard' => 500
-];
-$addon_names = [
-    'lpg' => 'LPGas', 'butane' => 'Butane', 'bonfire' => 'Bonfire',
-    'pet' => 'Pet Fee', 'darts' => 'Darts Game', 'billiard' => 'Billiard'
-];
+$addon_info = [];
+$addon_by_name = [];
+$ai_res = $conn->query("SELECT * FROM addons");
+while($ai_row = $ai_res->fetch_assoc()) {
+    $addon_info[$ai_row['id']] = $ai_row;
+    $addon_by_name[$ai_row['name']] = $ai_row;
+}
+
+// Fetch site settings
+$settings = [];
+$settings_res = $conn->query("SELECT setting_key, setting_value FROM site_settings");
+while($s_row = $settings_res->fetch_assoc()) {
+    $settings[$s_row['setting_key']] = $s_row['setting_value'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -55,6 +61,125 @@ $addon_names = [
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="check_status_style.css">
     <link rel="stylesheet" href="../uploader/style.css">
+    <style>
+        /* Download Receipt Styles */
+        #receipt-download-container {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            width: 450px; /* Mobile width optimized */
+            background: white;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        .receipt-download-card {
+            padding: 30px;
+            border: 1px solid #eee;
+            background: white;
+        }
+
+        .receipt-dl-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .receipt-dl-header h1 {
+            font-size: 28px;
+            margin: 0;
+            letter-spacing: 2px;
+            color: #000;
+        }
+
+        .receipt-dl-header p {
+            margin: 5px 0 0;
+            font-size: 16px;
+            text-transform: uppercase;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .receipt-dl-section {
+            margin-bottom: 25px;
+        }
+
+        .receipt-dl-section h4 {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .receipt-dl-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .receipt-dl-row.prominent {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .receipt-dl-row.total {
+            border-top: 2px solid #333;
+            margin-top: 15px;
+            padding-top: 15px;
+            font-weight: 800;
+            font-size: 18px;
+            color: #000;
+        }
+
+        .receipt-dl-row.downpayment {
+            font-weight: 700;
+            color: #166534;
+            background: #f0fdf4;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .receipt-dl-footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px dashed #ccc;
+            padding-top: 20px;
+        }
+
+        .status-badge {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-approved { background: #e8f5e9; color: #2e7d32; }
+        .status-rejected { background: #ffebee; color: #c62828; }
+        
+        .cs-btn-download {
+            background: #292929;
+            color: #fff;
+        }
+        
+        .cs-btn-download:hover {
+            background: #1a1a1a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
 </head>
 
 <body>
@@ -223,26 +348,50 @@ $addon_names = [
                             </span>
                         </div>
                         <?php
-                        $addons = json_decode($reservation['addons_json'], true) ?: [];
+                        $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
                         $total = floatval($reservation['total_price']);
-                        $addons_sum = 0;
-                        foreach ($addons as $key => $qty) {
-                            $addons_sum += is_numeric($qty) ? intval($qty) * $addon_prices[$key] : $addon_prices[$key];
+                        
+                        // Recalculate Surcharge
+                        $surcharge = 0;
+                        $booking_date = $reservation['booking_date'];
+                        $day_of_week = date('N', strtotime($booking_date)); // 1 (Mon) to 7 (Sun)
+                        if ($day_of_week >= 5) { // Fri, Sat, Sun
+                            $surcharge = 1000;
+                        } else {
+                            $special_dates = explode(',', $settings['special_dates'] ?? '');
+                            if (in_array($booking_date, array_map('trim', $special_dates))) {
+                                $surcharge = 1000;
+                            }
                         }
-                        $base_rate = $total - $addons_sum;
+
+                        $addons_sum = 0;
+                        $addons_html = '';
+                        foreach ($addons_booked as $name => $qty) {
+                            if (isset($addon_by_name[$name])) {
+                                $info = $addon_by_name[$name];
+                                $p = is_numeric($qty) ? intval($qty) * $info['price'] : $info['price'];
+                                $addons_sum += $p;
+                                $addons_html .= '<div class="cs-info-row">
+                                    <span class="cs-info-label">' . htmlspecialchars($info['name']) . (is_numeric($qty) ? " (x$qty)" : '') . '</span>
+                                    <span class="cs-info-value">₱' . number_format($p) . '</span>
+                                </div>';
+                            }
+                        }
+                        $base_rate = $total - $addons_sum - $surcharge;
                         ?>
                         <div class="cs-info-row">
                             <span class="cs-info-label">Base Rate</span>
                             <span class="cs-info-value">₱<?php echo number_format($base_rate); ?></span>
                         </div>
-                        <?php foreach ($addons as $key => $qty):
-                            $p = is_numeric($qty) ? intval($qty) * $addon_prices[$key] : $addon_prices[$key];
-                        ?>
-                            <div class="cs-info-row">
-                                <span class="cs-info-label"><?php echo $addon_names[$key]; ?><?php echo is_numeric($qty) ? " (x$qty)" : ''; ?></span>
-                                <span class="cs-info-value">₱<?php echo number_format($p); ?></span>
+                        <?php echo $addons_html; ?>
+                        
+                        <?php if ($surcharge > 0): ?>
+                            <div class="cs-info-row" style="color: var(--cs-danger);">
+                                <span class="cs-info-label">Weekend/Holiday Surcharge</span>
+                                <span class="cs-info-value">₱<?php echo number_format($surcharge); ?></span>
                             </div>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
+
                         <div class="cs-info-row cs-total-row">
                             <span class="cs-info-label">Total Price</span>
                             <span class="cs-info-value cs-total-value">₱<?php echo number_format($total); ?></span>
@@ -331,6 +480,9 @@ $addon_names = [
 
             <!-- Action Buttons -->
             <div class="cs-action-row">
+                <button onclick="downloadSummary()" class="cs-btn-action cs-btn-download">
+                    <i class="fas fa-download"></i> Download Summary
+                </button>
                 <button onclick="window.print()" class="cs-btn-action cs-btn-print">
                     <i class="fas fa-print"></i> Print Details
                 </button>
@@ -338,15 +490,140 @@ $addon_names = [
                     <i class="fas fa-home"></i> Back to Home
                 </a>
             </div>
-        <?php elseif ($searched && !$error): ?>
-            <!-- This shouldn't normally be reached, but just in case -->
-        <?php endif; ?>
+    <div id="receipt-download-container">
+        <div class="receipt-download-card">
+            <div class="receipt-dl-header">
+                <h1>CK RESORT</h1>
+                <p>Reservation Summary</p>
+            </div>
+
+            <div class="receipt-dl-section">
+                <div class="receipt-dl-row prominent">
+                    <span style="font-weight:700">REFERENCE:</span>
+                    <span style="font-weight:800; color:#166534">#<?php echo $reservation['reservation_id']; ?></span>
+                </div>
+                <div class="receipt-dl-row">
+                    <span>Guest Name:</span>
+                    <span style="font-weight:600"><?php echo htmlspecialchars($reservation['full_name']); ?></span>
+                </div>
+                <div class="receipt-dl-row">
+                    <span>Event Date:</span>
+                    <span style="font-weight:600"><?php echo date('F j, Y', strtotime($reservation['booking_date'])); ?></span>
+                </div>
+                <div class="receipt-dl-row">
+                    <span>Time Slot:</span>
+                    <span style="font-weight:600"><?php echo date('h:i A', strtotime($reservation['start_time'])) . ' - ' . date('h:i A', strtotime($reservation['end_time'])); ?></span>
+                </div>
+                <div class="receipt-dl-row">
+                    <span>Event Type:</span>
+                    <span style="font-weight:600"><?php echo htmlspecialchars($reservation['event_base_name']); ?></span>
+                </div>
+            </div>
+
+            <div class="receipt-dl-section">
+                <h4>Status Information</h4>
+                <div class="receipt-dl-row">
+                    <span>Reservation Status:</span>
+                    <span class="status-badge status-<?php echo $reservation['status']; ?>"><?php echo ucfirst($reservation['status']); ?></span>
+                </div>
+                <div class="receipt-dl-row">
+                    <span>Payment Status:</span>
+                    <span class="status-badge status-<?php echo $reservation['payment_status']; ?>"><?php echo ucfirst($reservation['payment_status']); ?></span>
+                </div>
+            </div>
+
+            <div class="receipt-dl-section">
+                <h4>Cost Breakdown</h4>
+                <div class="receipt-dl-row">
+                    <span>Base Rate</span>
+                    <span>P<?php echo number_format($base_rate); ?></span>
+                </div>
+
+                <?php
+                // Use the same loop logic as above
+                foreach ($addons_booked as $name => $qty) {
+                    if (isset($addon_by_name[$name])) {
+                        $info = $addon_by_name[$name];
+                        $p = is_numeric($qty) ? intval($qty) * $info['price'] : $info['price'];
+                        echo '<div class="receipt-dl-row">
+                            <span>' . htmlspecialchars($info['name']) . (is_numeric($qty) ? " (x$qty)" : '') . '</span>
+                            <span>P' . number_format($p) . '</span>
+                        </div>';
+                    }
+                }
+                ?>
+
+                <?php if ($surcharge > 0): ?>
+                    <div class="receipt-dl-row" style="color: #e11d48; font-weight:600;">
+                        <span>Weekend/Holiday Surcharge</span>
+                        <span>P<?php echo number_format($surcharge); ?></span>
+                    </div>
+                <?php endif; ?>
+
+                <div class="receipt-dl-row total">
+                    <span>GRAND TOTAL</span>
+                    <span>P<?php echo number_format($total); ?></span>
+                </div>
+                <div class="receipt-dl-row downpayment">
+                    <span>Downpayment Required (50%)</span>
+                    <span>P<?php echo number_format($total * 0.5); ?></span>
+                </div>
+            </div>
+
+            <div class="receipt-dl-footer">
+                <p>Thank you for choosing CK Resort!</p>
+                <p style="margin-top:10px; font-size:10px;"><?php echo date('Y-m-d H:i:s'); ?></p>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
     <footer class="cs-footer">
         <p>&copy; <?php echo date('Y'); ?> CK Resort & Events Place. All Rights Reserved.</p>
     </footer>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        function downloadSummary() {
+            const btn = document.querySelector('.cs-btn-download');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            btn.disabled = true;
+
+            const receipt = document.getElementById('receipt-download-container');
+            
+            // Temporary styles to ensure capture is perfect
+            receipt.style.left = "0";
+            receipt.style.position = "static";
+            receipt.style.display = "block";
+
+            html2canvas(receipt, {
+                scale: 2, // High resolution
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            }).then(canvas => {
+                // Restore styles
+                receipt.style.position = "absolute";
+                receipt.style.left = "-9999px";
+
+                const link = document.createElement('a');
+                link.download = 'CK_Resort_Summary_#<?php echo $reservation['reservation_id']; ?>.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(err => {
+                console.error("Download failed:", err);
+                alert("Download failed. Please try again.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                
+                receipt.style.position = "absolute";
+                receipt.style.left = "-9999px";
+            });
+        }
+    </script>
 </body>
 
 </html>

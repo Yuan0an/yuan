@@ -275,9 +275,10 @@ $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
 
         .receipt-dl-header p {
             margin: 5px 0 0;
-            font-size: 14px;
+            font-size: 16px;
             text-transform: uppercase;
-            color: #666;
+            color: #333;
+            font-weight: 700;
         }
 
         .receipt-dl-section {
@@ -334,6 +335,18 @@ $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
             padding-top: 20px;
         }
 
+        .status-badge {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-approved { background: #e8f5e9; color: #2e7d32; }
+        .status-rejected { background: #ffebee; color: #c62828; }
+
         @media print {
             body { background: white; color: black; }
             .success-wrapper { margin: 0; padding: 0; max-width: 100%; }
@@ -356,7 +369,7 @@ $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
         <div class="receipt-download-card">
             <div class="receipt-dl-header">
                 <h1>CK RESORT</h1>
-                <p>Official Reservation Receipt</p>
+                <p>Reservation Summary</p>
             </div>
 
             <div class="receipt-dl-section">
@@ -383,14 +396,34 @@ $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
             </div>
 
             <div class="receipt-dl-section">
+                <h4>Status Information</h4>
+                <div class="receipt-dl-row">
+                    <span>Reservation Status:</span>
+                    <span class="status-badge status-<?php echo $reservation['status']; ?>"><?php echo ucfirst($reservation['status']); ?></span>
+                </div>
+                <div class="receipt-dl-row">
+                    <span>Payment Status:</span>
+                    <span class="status-badge status-<?php echo $reservation['payment_status']; ?>"><?php echo ucfirst($reservation['payment_status']); ?></span>
+                </div>
+            </div>
+
+            <div class="receipt-dl-section">
                 <h4>Cost Breakdown</h4>
                 <?php
                 $total = floatval($reservation['total_price']);
                 $addons_sum = 0;
-                foreach ($addons_booked as $id => $qty) {
-                    if (isset($addon_info[$id])) {
-                        $price = $addon_info[$id]['price'] * (is_numeric($qty) ? intval($qty) : 1);
+                $addons_list_output = '';
+                
+                // Get all possible addon IDs to check against JSON
+                foreach ($addons_booked as $name => $qty) {
+                    if (isset($addon_by_name[$name])) {
+                        $info = $addon_by_name[$name];
+                        $price = $info['price'] * (is_numeric($qty) ? intval($qty) : 1);
                         $addons_sum += $price;
+                        $addons_list_output .= '<div class="receipt-dl-row">
+                            <span>' . htmlspecialchars($info['name']) . ' ' . (is_numeric($qty) ? "(x$qty)" : "") . '</span>
+                            <span>P' . number_format($price) . '</span>
+                        </div>';
                     }
                 }
                 $base_rate = $total - $addons_sum - $surcharge;
@@ -401,15 +434,7 @@ $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
                     <span>P<?php echo number_format($base_rate); ?></span>
                 </div>
 
-                <?php foreach ($addons_booked as $id => $qty): ?>
-                    <?php if (isset($addon_info[$id])): ?>
-                        <?php $price = $addon_info[$id]['price'] * (is_numeric($qty) ? intval($qty) : 1); ?>
-                        <div class="receipt-dl-row">
-                            <span><?php echo htmlspecialchars($addon_info[$id]['name']); ?> <?php echo is_numeric($qty) ? "(x$qty)" : ""; ?></span>
-                            <span>P<?php echo number_format($price); ?></span>
-                        </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
+                <?php echo $addons_list_output; ?>
 
                 <?php if ($surcharge > 0): ?>
                     <div class="receipt-dl-row" style="color: #e11d48; font-weight:600;">
@@ -430,7 +455,6 @@ $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
 
             <div class="receipt-dl-footer">
                 <p>Thank you for choosing CK Resort!</p>
-                <p>Please present this receipt upon arrival.</p>
                 <p style="margin-top:10px; font-size:10px;"><?php echo date('Y-m-d H:i:s'); ?></p>
             </div>
         </div>
@@ -505,11 +529,12 @@ $addons_booked = json_decode($reservation['addons_json'], true) ?: [];
                         <span>P<?php echo number_format($base_rate); ?></span>
                     </div>
 
-                    <?php foreach ($addons_booked as $id => $qty): ?>
-                        <?php if (isset($addon_info[$id])): ?>
-                            <?php $price = $addon_info[$id]['price'] * (is_numeric($qty) ? intval($qty) : 1); ?>
+                    <?php foreach ($addons_booked as $name => $qty): ?>
+                        <?php if (isset($addon_by_name[$name])): ?>
+                            <?php $info = $addon_by_name[$name]; ?>
+                            <?php $price = $info['price'] * (is_numeric($qty) ? intval($qty) : 1); ?>
                             <div class="price-row">
-                                <span><?php echo htmlspecialchars($addon_info[$id]['name']); ?> <?php echo is_numeric($qty) ? "(x$qty)" : ""; ?></span>
+                                <span><?php echo htmlspecialchars($info['name']); ?> <?php echo is_numeric($qty) ? "(x$qty)" : ""; ?></span>
                                 <span>P<?php echo number_format($price); ?></span>
                             </div>
                         <?php endif; ?>
