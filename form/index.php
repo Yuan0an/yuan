@@ -719,20 +719,25 @@ while ($row = $settings_res->fetch_assoc()) {
             // 3. Weekend/Holiday Surcharge (P1000)
             let surcharge = 0;
             if (selectedDate) {
-                // Get day of week (0=Sun, 5=Fri, 6=Sat)
-                let day = selectedDate.getDay();
-                let isWeekend = (day === 0 || day === 5 || day === 6);
+                // Ensure we have a Date object
+                let dateObj = typeof selectedDate === 'string' ? new Date(selectedDate) : selectedDate;
                 
-                // Get YYYY-MM-DD string
-                let y = selectedDate.getFullYear();
-                let m = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                let d = String(selectedDate.getDate()).padStart(2, '0');
-                let dateStr = `${y}-${m}-${d}`;
-                
-                let isHoliday = specialDates.includes(dateStr);
-                
-                if (isWeekend || isHoliday) {
-                    surcharge = 1000;
+                if (!isNaN(dateObj.getTime())) {
+                    // Get day of week (0=Sun, 5=Fri, 6=Sat)
+                    let day = dateObj.getDay();
+                    let isWeekend = (day === 0 || day === 5 || day === 6);
+                    
+                    // Get YYYY-MM-DD string
+                    let y = dateObj.getFullYear();
+                    let m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    let d = String(dateObj.getDate()).padStart(2, '0');
+                    let dateStr = `${y}-${m}-${d}`;
+                    
+                    let isHoliday = specialDates.includes(dateStr);
+                    
+                    if (isWeekend || isHoliday) {
+                        surcharge = 1000;
+                    }
                 }
             }
 
@@ -761,6 +766,8 @@ while ($row = $settings_res->fetch_assoc()) {
         // Bind inputs to recalculate
         $(document).ready(function () {
             $('#guests').on('input change', calculateTotal);
+            $('.counter-input, .addons-grid input[type="checkbox"]').on('input change', calculateTotal);
+            
             // Trigger initial calculation when form is shown
             const originalShowForm = showReservationForm;
             window.showReservationForm = function (date) {
