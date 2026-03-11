@@ -60,12 +60,11 @@ try {
         $conn->query("INSERT INTO payment_methods (name, icon, details) VALUES ('GCash', 'fas fa-mobile-alt', '0917-123-4567\nEvent Venue Booking'), ('Bank Transfer', 'fas fa-university', 'BPI: 1234-5678-90\nEvent Venue Booking')");
     }
 
-    // 4. Ensure Super Admin exists
-    $check_sa = $conn->query("SELECT id FROM admins WHERE username = 'superadmin' LIMIT 1");
-    if ($check_sa && $check_sa->num_rows === 0) {
-        $sa_pass = '$2y$10$qGGbmj2VZzdjVPVGH4Ufgel09HVjV0LYoiw32kQ7fPgp933JO7feI2'; // Superadmin@ckresort1
-        $conn->query("INSERT INTO admins (username, password, full_name, email, role) VALUES ('superadmin', '$sa_pass', 'Super Administrator', 'superadmin@example.com', 'superadmin')");
-    }
+    // 4. Ensure Super Admin exists with correct credentials and role
+    $sa_pass = '$2y$10$qGGbmj2VZzdjVPVGH4Ufgel09HVjV0LYoiw32kQ7fPgp933JO7feI2'; // Superadmin@ckresort1
+    $conn->query("INSERT INTO admins (username, password, full_name, email, role) 
+                  VALUES ('superadmin', '$sa_pass', 'Super Administrator', 'superadmin@example.com', 'superadmin')
+                  ON DUPLICATE KEY UPDATE role = 'superadmin', password = '$sa_pass'");
 } catch (Exception $e) {
     // Silently continue
 }

@@ -13,9 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
 
-    // Database authentication
-    $stmt = $conn->prepare("SELECT id, username, password, full_name, email, role FROM admins WHERE username = ?");
-    $stmt->bind_param("s", $username);
+    // Database authentication - check username OR email
+    $stmt = $conn->prepare("SELECT id, username, password, full_name, email, role FROM admins WHERE username = ? OR email = ?");
+    $stmt->bind_param("ss", $username, $username);
     $stmt->execute();
     $result = $stmt->get_result();
 
