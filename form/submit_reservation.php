@@ -30,16 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Add-ons and Pricing
     $addons = [];
-    $addon_fields = ['lpg', 'butane', 'bonfire', 'pet', 'darts', 'billiard'];
     $total_price = 0;
 
-    // Calculate total on server side for security (optional but good) or just take from POST if trusted
-    // Here we'll just capture what was sent to ensure the summary page matches
-    foreach ($addon_fields as $field) {
-        if (isset($_POST['addon_' . $field])) {
-            $val = $_POST['addon_' . $field];
+    // Fetch active addons to know what to look for in POST
+    $addons_query = $conn->query("SELECT id, name FROM addons WHERE is_active = 1");
+    while ($addon_row = $addons_query->fetch_assoc()) {
+        $addon_id = $addon_row['id'];
+        $field_name = 'addon_' . $addon_id;
+        if (isset($_POST[$field_name])) {
+            $val = $_POST[$field_name];
             if ($val > 0 || $val === '1') {
-                $addons[$field] = $val;
+                $addons[$addon_row['name']] = $val;
             }
         }
     }

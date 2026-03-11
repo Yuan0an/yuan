@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'];
 
     // Database authentication
-    $stmt = $conn->prepare("SELECT id, username, password, full_name, email FROM admins WHERE username = ?");
+    $stmt = $conn->prepare("SELECT id, username, password, full_name, email, role FROM admins WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -27,8 +27,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_id']        = $admin['id'];
             $_SESSION['admin_name']      = $admin['full_name'];
+            $_SESSION['admin_role']      = $admin['role'];
 
-            header('Location: dashboard.php');
+            if ($admin['role'] === 'superadmin') {
+                header('Location: ../super_admin/dashboard.php');
+            } else {
+                header('Location: dashboard.php');
+            }
             exit;
         }
     }

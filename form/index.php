@@ -1,9 +1,26 @@
 <?php
 require 'config.php';
 include_once __DIR__ . '/../includes/header.php';
+
 // Get all events
-$sql = "SELECT * FROM events";
+$sql = "SELECT id, name, start_time, end_time, max_persons, is_overnight, pricing_logic FROM events";
 $result = $conn->query($sql);
+
+// Get all active addons
+$addons_sql = "SELECT * FROM addons WHERE is_active = 1";
+$addons_result = $conn->query($addons_sql);
+$addons = [];
+while ($row = $addons_result->fetch_assoc()) {
+    $addons[] = $row;
+}
+
+// Get all active payment methods
+$pm_sql = "SELECT * FROM payment_methods WHERE is_active = 1";
+$pm_result = $conn->query($pm_sql);
+$payment_methods = [];
+while ($row = $pm_result->fetch_assoc()) {
+    $payment_methods[] = $row;
+}
 ?>
 
 <!DOCTYPE html>
@@ -34,7 +51,8 @@ $result = $conn->query($sql);
                         <div class="event-item" data-id="<?php echo $event['id']; ?>"
                             data-name="<?php echo htmlspecialchars($event['name'] ?? ''); ?>"
                             data-start="<?php echo $event['start_time']; ?>" data-end="<?php echo $event['end_time']; ?>"
-                            data-overnight="<?php echo $is_overnight; ?>" data-max="<?php echo $event['max_persons']; ?>">
+                            data-overnight="<?php echo $is_overnight; ?>" data-max="<?php echo $event['max_persons']; ?>"
+                            data-pricing='<?php echo htmlspecialchars($event['pricing_logic'] ?? "{}"); ?>'>
                             <h3><?php echo htmlspecialchars($event['name'] ?? ''); ?></h3>
                             <p><i class="far fa-clock"></i> <?php echo date('g:i A', strtotime($event['start_time'])); ?> to
                                 <?php echo $end_time_display; ?>
@@ -174,85 +192,37 @@ $result = $conn->query($sql);
                     <p class="subtitle">Select additional items for your event.</p>
 
                     <div class="addons-grid">
-                        <!-- LPGas -->
-                        <div class="addon-card">
-                            <div class="addon-header">LPGas</div>
-                            <div class="addon-price">P250</div>
-                            <input type="hidden" name="addon_lpg_price" value="250">
-                            <div class="addon-control">
-                                <button type="button" class="counter-btn" onclick="updateCounter('lpg', -1)">-</button>
-                                <input type="number" id="addon_lpg" name="addon_lpg" value="0" min="0" readonly
-                                    class="counter-input">
-                                <button type="button" class="counter-btn" onclick="updateCounter('lpg', 1)">+</button>
-                            </div>
-                        </div>
-
-                        <!-- Butane -->
-                        <div class="addon-card">
-                            <div class="addon-header">Butane</div>
-                            <div class="addon-price">P150</div>
-                            <input type="hidden" name="addon_butane_price" value="150">
-                            <div class="addon-control">
-                                <button type="button" class="counter-btn"
-                                    onclick="updateCounter('butane', -1)">-</button>
-                                <input type="number" id="addon_butane" name="addon_butane" value="0" min="0" readonly
-                                    class="counter-input">
-                                <button type="button" class="counter-btn"
-                                    onclick="updateCounter('butane', 1)">+</button>
-                            </div>
-                        </div>
-
-                        <!-- Bonfire -->
-                        <div class="addon-card">
-                            <div class="addon-header">Bonfire</div>
-                            <div class="addon-desc">w/ 2 packs marshmallow</div>
-                            <div class="addon-price">P500</div>
-                            <input type="hidden" name="addon_bonfire_price" value="500">
-                            <div class="addon-control">
-                                <button type="button" class="counter-btn"
-                                    onclick="updateCounter('bonfire', -1)">-</button>
-                                <input type="number" id="addon_bonfire" name="addon_bonfire" value="0" min="0" readonly
-                                    class="counter-input">
-                                <button type="button" class="counter-btn"
-                                    onclick="updateCounter('bonfire', 1)">+</button>
-                            </div>
-                        </div>
-
-                        <!-- Pets -->
-                        <div class="addon-card">
-                            <div class="addon-header">Pet Fee</div>
-                            <div class="addon-price">P200</div>
-                            <input type="hidden" name="addon_pet_price" value="200">
-                            <div class="addon-control">
-                                <button type="button" class="counter-btn" onclick="updateCounter('pet', -1)">-</button>
-                                <input type="number" id="addon_pet" name="addon_pet" value="0" min="0" readonly
-                                    class="counter-input">
-                                <button type="button" class="counter-btn" onclick="updateCounter('pet', 1)">+</button>
-                            </div>
-                        </div>
-
-                        <!-- Darts -->
-                        <div class="addon-card checkbox-card" onclick="toggleCheckbox('darts')">
-                            <div class="addon-header">Darts Game</div>
-                            <div class="addon-price">P250</div>
-                            <input type="hidden" name="addon_darts_price" value="250">
-                            <div class="addon-control">
-                                <input type="checkbox" id="addon_darts" name="addon_darts" value="1">
-                                <label for="addon_darts">Add</label>
-                            </div>
-                        </div>
-
-                        <!-- Billiard -->
-                        <div class="addon-card checkbox-card" onclick="toggleCheckbox('billiard')">
-                            <div class="addon-header">Billiard</div>
-                            <div class="addon-desc">Unlimited Play</div>
-                            <div class="addon-price">P500</div>
-                            <input type="hidden" name="addon_billiard_price" value="500">
-                            <div class="addon-control">
-                                <input type="checkbox" id="addon_billiard" name="addon_billiard" value="1">
-                                <label for="addon_billiard">Add</label>
-                            </div>
-                        </div>
+                        <?php foreach ($addons as $addon): ?>
+                            <?php if ($addon['type'] === 'counter'): ?>
+                                <div class="addon-card">
+                                    <div class="addon-header"><?php echo htmlspecialchars($addon['name']); ?></div>
+                                    <?php if (!empty($addon['description'])): ?>
+                                        <div class="addon-desc"><?php echo htmlspecialchars($addon['description']); ?></div>
+                                    <?php endif; ?>
+                                    <div class="addon-price">P<?php echo number_format($addon['price'], 0); ?></div>
+                                    <input type="hidden" name="addon_<?php echo $addon['id']; ?>_price" value="<?php echo $addon['price']; ?>">
+                                    <div class="addon-control">
+                                        <button type="button" class="counter-btn" onclick="updateCounter('<?php echo $addon['id']; ?>', -1)">-</button>
+                                        <input type="number" id="addon_<?php echo $addon['id']; ?>" name="addon_<?php echo $addon['id']; ?>" value="0" min="0" readonly
+                                            class="counter-input" data-price="<?php echo $addon['price']; ?>">
+                                        <button type="button" class="counter-btn" onclick="updateCounter('<?php echo $addon['id']; ?>', 1)">+</button>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="addon-card checkbox-card" onclick="toggleCheckbox('<?php echo $addon['id']; ?>')">
+                                    <div class="addon-header"><?php echo htmlspecialchars($addon['name']); ?></div>
+                                    <?php if (!empty($addon['description'])): ?>
+                                        <div class="addon-desc"><?php echo htmlspecialchars($addon['description']); ?></div>
+                                    <?php endif; ?>
+                                    <div class="addon-price">P<?php echo number_format($addon['price'], 0); ?></div>
+                                    <input type="hidden" name="addon_<?php echo $addon['id']; ?>_price" value="<?php echo $addon['price']; ?>">
+                                    <div class="addon-control">
+                                        <input type="checkbox" id="addon_<?php echo $addon['id']; ?>" name="addon_<?php echo $addon['id']; ?>" value="1" data-price="<?php echo $addon['price']; ?>">
+                                        <label for="addon_<?php echo $addon['id']; ?>">Add</label>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
                 </div>
                 <div class="form-section summary-section">
@@ -287,29 +257,17 @@ $result = $conn->query($sql);
                     </p>
 
                     <div class="payment-grid">
-                        <!-- GCash Card -->
-                        <div class="payment-card" onclick="selectPayment('GCash')">
-                            <input type="radio" id="gcash" name="payment_method" value="GCash" required
-                                style="display:none;">
-                            <div class="payment-card-icon"><i class="fas fa-mobile-alt"></i></div>
-                            <div class="payment-card-title">GCash</div>
-                            <div class="payment-card-details">
-                                <p>0917-123-4567</p>
-                                <p>Event Venue Booking</p>
+                        <?php foreach ($payment_methods as $pm): ?>
+                            <div class="payment-card" onclick="selectPayment('<?php echo htmlspecialchars($pm['name']); ?>', 'pm_<?php echo $pm['id']; ?>')">
+                                <input type="radio" id="pm_<?php echo $pm['id']; ?>" name="payment_method" value="<?php echo htmlspecialchars($pm['name']); ?>" required
+                                    style="display:none;">
+                                <div class="payment-card-icon"><i class="<?php echo htmlspecialchars($pm['icon']); ?>"></i></div>
+                                <div class="payment-card-title"><?php echo htmlspecialchars($pm['name']); ?></div>
+                                <div class="payment-card-details">
+                                    <?php echo nl2br(htmlspecialchars($pm['details'])); ?>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Bank Transfer Card -->
-                        <div class="payment-card" onclick="selectPayment('Bank Transfer')">
-                            <input type="radio" id="bank_transfer" name="payment_method" value="Bank Transfer" required
-                                style="display:none;">
-                            <div class="payment-card-icon"><i class="fas fa-university"></i></div>
-                            <div class="payment-card-title">Bank Transfer</div>
-                            <div class="payment-card-details">
-                                <p>BPI: 1234-5678-90</p>
-                                <p>Event Venue Booking</p>
-                            </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
@@ -388,6 +346,7 @@ $result = $conn->query($sql);
         let selectedEventName = '';
         let selectedEventStart = '';
         let selectedEventEnd = '';
+        let selectedEventPricing = null;
         let isOvernight = false;
 
         $(document).ready(function () {
@@ -404,6 +363,7 @@ $result = $conn->query($sql);
                 selectedEventName = $(this).data('name');
                 selectedEventStart = $(this).data('start');
                 selectedEventEnd = $(this).data('end');
+                selectedEventPricing = $(this).data('pricing');
                 isOvernight = $(this).data('overnight') == 1;
 
                 loadCalendar();
@@ -640,18 +600,16 @@ $result = $conn->query($sql);
             }
             calculateTotal();
         }
-        function selectPayment(method) {
+        function selectPayment(method, id) {
             // Unselect all cards
             $('.payment-card').removeClass('selected');
+            
+            // Uncheck all radios
+            $('.payment-grid input[type="radio"]').prop('checked', false);
 
             // Select the clicked card and its radio button
-            if (method === 'GCash') {
-                $('#gcash').prop('checked', true);
-                $('#gcash').closest('.payment-card').addClass('selected');
-            } else if (method === 'Bank Transfer') {
-                $('#bank_transfer').prop('checked', true);
-                $('#bank_transfer').closest('.payment-card').addClass('selected');
-            }
+            $('#' + id).prop('checked', true);
+            $('#' + id).closest('.payment-card').addClass('selected');
         }
 
         // Pricing Calculation Logic
@@ -662,41 +620,32 @@ $result = $conn->query($sql);
             let baseRate = 0;
 
             // 1. Calculate Base Rate
-            if (selectedEventName.includes('Day Tour')) {
-                if (pax <= 20) baseRate = 6000;
-                else baseRate = 7000; // 30 pax tier or higher
-            } else if (selectedEventName.includes('Night Tour')) {
-                if (pax <= 20) baseRate = 7000;
-                else baseRate = 8000; // 30 pax tier or higher
-            } else if (selectedEventName.includes('Overnight')) {
-                // Tiered pricing for Overnight
-                if (pax <= 10) baseRate = 12000;
-                else if (pax <= 15) baseRate = 14000;
-                else if (pax <= 20) baseRate = 17000;
-                else if (pax <= 25) baseRate = 21000;
-                else if (pax <= 30) baseRate = 25000;
-                else if (pax <= 35) baseRate = 28000;
-                else if (pax <= 40) baseRate = 31000;
-                else if (pax <= 45) baseRate = 34000;
-                else if (pax <= 50) baseRate = 38000;
-                else if (pax <= 55) baseRate = 41000;
-                else if (pax <= 60) baseRate = 44000;
-                else if (pax <= 65) baseRate = 47000;
-                else baseRate = 50000; // Up to 70 pax
+            if (selectedEventPricing && selectedEventPricing.tiers) {
+                // Find matching tier
+                for (let tier of selectedEventPricing.tiers) {
+                    if (pax <= tier.max) {
+                        baseRate = tier.price;
+                        break;
+                    }
+                }
+                // If no tier found but pax exists, take the last (highest) tier
+                if (baseRate === 0 && selectedEventPricing.tiers.length > 0) {
+                    baseRate = selectedEventPricing.tiers[selectedEventPricing.tiers.length - 1].price;
+                }
             }
 
             // 2. Calculate Add-ons
             let addonsTotal = 0;
 
-            // Counters
-            addonsTotal += (parseInt($('#addon_lpg').val()) || 0) * 250;
-            addonsTotal += (parseInt($('#addon_butane').val()) || 0) * 150;
-            addonsTotal += (parseInt($('#addon_bonfire').val()) || 0) * 500;
-            addonsTotal += (parseInt($('#addon_pet').val()) || 0) * 200;
-
-            // Checkboxes
-            if ($('#addon_darts').is(':checked')) addonsTotal += 250;
-            if ($('#addon_billiard').is(':checked')) addonsTotal += 500;
+            // Loop through all counter inputs and checkboxes that have a data-price attribute
+            $('.counter-input, .addons-grid input[type="checkbox"]').each(function() {
+                let price = parseFloat($(this).data('price')) || 0;
+                if ($(this).attr('type') === 'checkbox') {
+                    if ($(this).is(':checked')) addonsTotal += price;
+                } else {
+                    addonsTotal += (parseInt($(this).val()) || 0) * price;
+                }
+            });
 
             // 3. Update UI
             let grandTotal = baseRate + addonsTotal;
