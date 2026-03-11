@@ -78,18 +78,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // we'll rely on the frontend value for now as it's the source of truth for the user's expectation.
 
     // 1. Handle Customer (Find existing or Create new)
+    // NOTE: We do NOT update an existing customer's name/details to avoid silently
+    // renaming all previous reservations that share the same email address.
     $cust_stmt = $conn->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
     $cust_stmt->bind_param("s", $email);
     $cust_stmt->execute();
     $cust_res = $cust_stmt->get_result();
 
     if ($cust_res->num_rows > 0) {
+        // Customer already exists — reuse their ID, do NOT overwrite their name
         $customer_id = $cust_res->fetch_assoc()['id'];
-        // Update customer details in case they changed
-        $upd_cust = $conn->prepare("UPDATE customers SET full_name = ?, phone = ?, alt_phone = ?, company = ? WHERE id = ?");
-        $upd_cust->bind_param("ssssi", $full_name, $phone, $alt_phone, $company, $customer_id);
-        $upd_cust->execute();
     } else {
+        // New customer — insert fresh record
         $ins_cust = $conn->prepare("INSERT INTO customers (full_name, email, phone, alt_phone, company) VALUES (?, ?, ?, ?, ?)");
         $ins_cust->bind_param("sssss", $full_name, $email, $phone, $alt_phone, $company);
         $ins_cust->execute();
