@@ -576,6 +576,7 @@ while($s_row = $settings_res->fetch_assoc()) {
             </div>
         </div>
     </div>
+<?php endif; ?>
 
     <!-- Footer -->
     <footer class="cs-footer">

@@ -1,6 +1,22 @@
 <?php
 require 'config.php';
 
+// Fetch addons for display
+$addon_info = [];
+$addon_by_name = [];
+$ai_res = $conn->query("SELECT * FROM addons");
+while($ai_row = $ai_res->fetch_assoc()) {
+    $addon_info[$ai_row['id']] = $ai_row;
+    $addon_by_name[$ai_row['name']] = $ai_row;
+}
+
+// Fetch site settings for surcharge
+$settings = [];
+$settings_res = $conn->query("SELECT setting_key, setting_value FROM site_settings");
+while($s_row = $settings_res->fetch_assoc()) {
+    $settings[$s_row['setting_key']] = $s_row['setting_value'];
+}
+
 // Check if admin is logged in
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: index.php');
@@ -583,6 +599,47 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             </p>
                             <p><strong>Guests:</strong> <?php echo $single_reservation['persons']; ?> persons</p>
                             <p><strong>Capacity:</strong> <?php echo $single_reservation['max_persons']; ?> persons max</p>
+                            
+                            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+                            <h4>Itemized Breakdown</h4>
+                            <?php
+                            $addons_booked = json_decode($single_reservation['addons_json'], true) ?: [];
+                            $total = floatval($single_reservation['total_price']);
+                            
+                            // Calculate Surcharge
+                            $surcharge = 0;
+                            $booking_date = $single_reservation['booking_date'];
+                            $day_of_week = date('N', strtotime($booking_date));
+                            if ($day_of_week >= 5) {
+                                $surcharge = 1000;
+                            } else {
+                                $special_dates = explode(',', $settings['special_dates'] ?? '');
+                                if (in_array($booking_date, array_map('trim', $special_dates))) {
+                                    $surcharge = 1000;
+                                }
+                            }
+
+                            $addons_sum = 0;
+                            foreach ($addons_booked as $name => $qty) {
+                                if (isset($addon_by_name[$name])) {
+                                    $info = $addon_by_name[$name];
+                                    $p = is_numeric($qty) ? intval($qty) * $info['price'] : $info['price'];
+                                    $addons_sum += $p;
+                                    echo '<p><strong>' . htmlspecialchars($info['name']) . (is_numeric($qty) ? " (x$qty)" : '') . ':</strong> ₱' . number_format($p) . '</p>';
+                                }
+                            }
+                            $base_rate = $total - $addons_sum - $surcharge;
+                            ?>
+                            <p><strong>Base Rate (<?php echo htmlspecialchars($single_reservation['event_type']); ?>):</strong> ₱<?php echo number_format($base_rate); ?></p>
+                            <?php if ($surcharge > 0): ?>
+                                <p style="color: #e11d48;"><strong>Weekend/Holiday Surcharge:</strong> ₱<?php echo number_format($surcharge); ?></p>
+                            <?php endif; ?>
+                            <p style="font-size: 1.1rem; border-top: 2px solid #eee; padding-top: 10px; margin-top: 10px;">
+                                <strong>Grand Total:</strong> ₱<?php echo number_format($total); ?>
+                            </p>
+                            <p style="color: #166534; font-weight: 600;">
+                                <strong>Downpayment (50%):</strong> ₱<?php echo number_format($total * 0.5); ?>
+                            </p>
                         </div>
                     </div>
 
