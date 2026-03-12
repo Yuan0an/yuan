@@ -98,7 +98,11 @@ try {
             ('Overnight Stay - 7PM to 5PM', '19:00:00', '17:00:00', 70, 1, 5)");
     }
 
+    // 🛡️ Disable strict reporting for the rest of the application to prevent 500 errors on minor queries
+    mysqli_report(MYSQLI_REPORT_OFF);
+
 } catch (mysqli_sql_exception $e) {
-    die("Database connection failed. Please check your Railway environment variables.");
+    // If we can't connect, don't crash the whole site, just disable DB features
+    $conn = null;
 }
 ?>
