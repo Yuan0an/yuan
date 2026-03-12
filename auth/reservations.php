@@ -321,6 +321,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_refund'])) {
     $booking_id = intval($_POST['booking_id']);
     $refund_method = $conn->real_escape_string($_POST['refund_method']);
     
+    $refund_reference = isset($_POST['refund_reference']) ? $conn->real_escape_string(trim($_POST['refund_reference'])) : '';
+
     // Process file upload
     $refund_proof = '';
     if (isset($_FILES['refund_proof']) && $_FILES['refund_proof']['error'] == 0) {
@@ -330,6 +332,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_refund'])) {
         $file_name = time() . '_' . str_replace(' ', '_', $_FILES['refund_proof']['name']);
         if (move_uploaded_file($_FILES['refund_proof']['tmp_name'], $upload_dir . $file_name)) {
             $refund_proof = 'uploads/refunds/' . $file_name;
+        }
+    }
+    
+    // Check if reference number is provided instead
+    if (empty($refund_proof)) {
+        if (!empty($refund_reference)) {
+            $refund_proof = 'REF:' . $refund_reference;
+        } else {
+            $_SESSION['error'] = 'Please provide either a Reference Number or a File Upload as proof of refund.';
+            header('Location: reservations.php' . (isset($_POST['booking_id']) ? '?id=' . $booking_id : ''));
+            exit;
         }
     }
 
@@ -592,10 +605,10 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                 </a>
                             <?php endif; ?>
                             <?php if (($single_reservation['status'] == 'for_refund') || (in_array($single_reservation['status'], ['cancelled', 'rejected']) && $single_reservation['payment_status'] == 'paid')): ?>
-                                <button type="button" class="dropdown-item refund" style="text-align: left; background: none; border: none; width: 100%;"
+                                <a href="javascript:void(0)" class="dropdown-item refund"
                                     onclick="openRefundModal(<?php echo $single_reservation['id']; ?>)">
                                     <i class="fas fa-file-invoice-dollar"></i> Process Refund
-                                </button>
+                                </a>
                             <?php endif; ?>
                             <?php if ($single_reservation['payment_status'] == 'paid' || $single_reservation['status'] == 'pending'): ?>
                                 <a href="?action=reject_payment&id=<?php echo $single_reservation['id']; ?>" class="dropdown-item reject"
@@ -757,20 +770,29 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             <?php if (!empty($single_reservation['refund_proof'])): ?>
                                 <p><strong>Refund Proof:</strong></p>
                                 <?php 
-                                $refund_src = '/' . ltrim($single_reservation['refund_proof'], '/');
-                                // Check if PDF
-                                if (pathinfo($refund_src, PATHINFO_EXTENSION) === 'pdf'): 
+                                if (strpos($single_reservation['refund_proof'], 'REF:') === 0):
+                                    $ref_number = substr($single_reservation['refund_proof'], 4);
                                 ?>
-                                    <a href="<?php echo htmlspecialchars($refund_src); ?>" target="_blank" class="btn-save" style="display: inline-block; padding: 5px 10px; text-decoration: none;">
-                                        <i class="fas fa-file-pdf"></i> View PDF Proof
-                                    </a>
-                                <?php else: ?>
-                                    <div class="receipt-thumbnail-container" onclick="openReceiptModal('<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>', 'Refund Proof #<?php echo $single_reservation['id']; ?>')">
-                                        <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" class="receipt-thumbnail" onerror="this.src='../assets/placeholder-receipt.png'">
-                                        <div class="thumbnail-overlay">
-                                            <i class="fas fa-search-plus"></i>
-                                        </div>
+                                    <div class="ref-number-display" style="background: #f8fafc; padding: 10px 15px; border-radius: 6px; border: 1px solid #e2e8f0; display: inline-block;">
+                                        <i class="fas fa-hashtag" style="color: #64748b; margin-right: 5px;"></i>
+                                        <strong><?php echo htmlspecialchars($ref_number); ?></strong>
                                     </div>
+                                <?php else: 
+                                    $refund_src = '/' . ltrim($single_reservation['refund_proof'], '/');
+                                    // Check if PDF
+                                    if (pathinfo($refund_src, PATHINFO_EXTENSION) === 'pdf'): 
+                                    ?>
+                                        <a href="<?php echo htmlspecialchars($refund_src); ?>" target="_blank" class="btn-save" style="display: inline-block; padding: 5px 10px; text-decoration: none;">
+                                            <i class="fas fa-file-pdf"></i> View PDF Proof
+                                        </a>
+                                    <?php else: ?>
+                                        <div class="receipt-thumbnail-container" onclick="openReceiptModal('<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>', 'Refund Proof #<?php echo $single_reservation['id']; ?>')">
+                                            <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" class="receipt-thumbnail" onerror="this.src='../assets/placeholder-receipt.png'">
+                                            <div class="thumbnail-overlay">
+                                                <i class="fas fa-search-plus"></i>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <p><strong>Refund Proof:</strong> <span class="text-muted">No proof uploaded</span></p>
@@ -1096,14 +1118,17 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                 </div>
                 
                 <div class="form-group">
-                    <label>Upload Proof of Refund *</label>
-                    <input type="file" name="refund_proof" accept="image/*,.pdf" required class="form-control">
+                    <label>Proof of Refund (Input OR Upload) *</label>
+                    <input type="text" name="refund_reference" id="refund_reference" placeholder="Reference Number" class="form-control" style="margin-bottom: 10px;">
+                    <div style="text-align: center; margin: 10px 0; color: #888; font-size: 0.9em; font-weight: bold;">— OR —</div>
+                    <input type="file" name="refund_proof" id="refund_proof" accept="image/*,.pdf" class="form-control">
                     <small>Upload receipt or screenshot. Max 5MB (.jpg, .png, .pdf)</small>
                 </div>
                 
-                <button type="submit" name="process_refund" class="btn btn-primary" style="margin-top: 15px; width: 100%;">
+                <button type="button" onclick="validateRefundForm()" class="btn btn-primary" style="margin-top: 15px; width: 100%;">
                     Submit Refund
                 </button>
+                <button type="submit" name="process_refund" id="real_submit_refund" style="display: none;"></button>
             </form>
         </div>
     </div>
@@ -1150,11 +1175,25 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
         // Refund Modal Scripts
         function openRefundModal(id) {
             document.getElementById('refund_booking_id').value = id;
+            document.getElementById('refund_reference').value = '';
+            document.getElementById('refund_proof').value = '';
             document.getElementById('refundModal').style.display = 'block';
         }
 
         function closeRefundModal() {
             document.getElementById('refundModal').style.display = 'none';
+        }
+        
+        function validateRefundForm() {
+            const refNum = document.getElementById('refund_reference').value.trim();
+            const proofFile = document.getElementById('refund_proof').value;
+            
+            if (!refNum && !proofFile) {
+                alert('Please either enter a Reference Number OR upload a Proof of Refund file.');
+                return;
+            }
+            
+            document.getElementById('real_submit_refund').click();
         }
 
         // Close modals when clicking outside

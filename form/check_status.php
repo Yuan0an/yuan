@@ -369,14 +369,23 @@ while($s_row = $settings_res->fetch_assoc()) {
                             <div class="cs-info-row" style="margin-top: 15px; display: block;">
                                 <span class="cs-info-label" style="margin-bottom: 8px; display: block;">Proof of Refund</span>
                                 <?php 
-                                $refund_src = '/' . ltrim($reservation['refund_proof'], '/');
-                                if (pathinfo($refund_src, PATHINFO_EXTENSION) === 'pdf'): 
+                                if (strpos($reservation['refund_proof'], 'REF:') === 0):
+                                    $ref_number = substr($reservation['refund_proof'], 4);
+                                ?>
+                                    <div class="cs-ref-display" style="background: #f8fafc; padding: 10px 15px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 1.1rem;">
+                                        <i class="fas fa-hashtag" style="color: #64748b; margin-right: 5px;"></i>
+                                        <strong><?php echo htmlspecialchars($ref_number); ?></strong>
+                                    </div>
+                                <?php else:
+                                    $refund_src = '/' . ltrim($reservation['refund_proof'], '/');
+                                    if (pathinfo($refund_src, PATHINFO_EXTENSION) === 'pdf'): 
                                 ?>
                                     <a href="<?php echo htmlspecialchars($refund_src); ?>" target="_blank" class="cs-btn-action" style="display: inline-block; padding: 8px 15px; text-decoration: none; background: #e2e8f0; color: #333; border-radius: 6px; font-size: 0.9rem;">
                                         <i class="fas fa-file-pdf"></i> View PDF Receipt
                                     </a>
-                                <?php else: ?>
-                                    <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" style="max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.src='../assets/placeholder-receipt.png'">
+                                    <?php else: ?>
+                                        <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" style="max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.src='../assets/placeholder-receipt.png'">
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
