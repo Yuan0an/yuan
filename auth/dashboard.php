@@ -44,17 +44,6 @@ $stmt->bind_param("s", $week_ago);
 $stmt->execute();
 $stats['recent'] = $stmt->get_result()->fetch_assoc()['total'];
 
-// Get recent pending reservations
-$recent_pending = $conn->query("
-    SELECT b.*, e.name as event_name, c.full_name, c.email, p.payment_status 
-    FROM bookings b 
-    JOIN events e ON b.event_id = e.id 
-    JOIN customers c ON b.customer_id = c.id
-    LEFT JOIN payments p ON b.id = p.booking_id
-    WHERE b.status = 'pending' 
-    ORDER BY b.created_at DESC 
-    LIMIT 3
-");
 
 // Get today's reservations
 $today_reservations = $conn->query("
@@ -213,89 +202,6 @@ $upcoming_reservations = $conn->query("
                     <h3><?php echo $stats['total_refunded']; ?></h3>
                     <p>Total Refunded</p>
                 </div>
-            </div>
-        </div>
-
-        <!-- Recent Pending Reservations -->
-        <div class="dashboard-section">
-            <div class="section-header">
-                <h2><i class="fas fa-clock"></i> Recent Pending Reservations</h2>
-                <a href="reservations.php?status=pending" class="view-all">View All <i
-                        class="fas fa-arrow-right"></i></a>
-            </div>
-
-            <div class="table-container table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th>Event</th>
-                            <th>Date & Time</th>
-                            <th>Guests</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="table-body">
-                        <?php while ($reservation = $recent_pending->fetch_assoc()): ?>
-                            <tr>
-                                <td>#<?php echo $reservation['reservation_id']; ?></td>
-                                <td>
-                                    <strong><?php echo htmlspecialchars($reservation['full_name'] ?? ''); ?></strong><br>
-                                    <small><?php echo htmlspecialchars($reservation['email'] ?? ''); ?></small>
-                                </td>
-                                <td><?php echo htmlspecialchars($reservation['event_name'] ?? ''); ?></td>
-                                <td>
-                                    <?php echo date('M j, Y', strtotime($reservation['booking_date'])); ?><br>
-                                    <?php echo date('g:i A', strtotime($reservation['start_time'])); ?> -
-                                    <?php echo date('g:i A', strtotime($reservation['end_time'])); ?>
-                                </td>
-                                <td><?php echo $reservation['persons']; ?></td>
-                                <td>
-                                    <span class="status-badge pending">Pending</span>
-                                </td>
-                                <td>
-                                    <div class="action-dropdown">
-                                        <button class="btn-actions" onclick="toggleDropdown(this)">
-                                            Actions <i class="fas fa-chevron-down"></i>
-                                        </button>
-                                        <div class="dropdown-menu">
-                                            <a href="reservations.php?id=<?php echo $reservation['id']; ?>"
-                                                class="dropdown-item">
-                                                <i class="fas fa-eye"></i> View Details
-                                            </a>
-                                            <?php if ($reservation['payment_status'] !== 'paid'): ?>
-                                                <a href="reservations.php?action=mark_paid&id=<?php echo $reservation['id']; ?>"
-                                                    class="dropdown-item approve"
-                                                    onclick="return confirm('Mark this reservation as paid?')">
-                                                    <i class="fas fa-money-bill-wave"></i> Mark as Paid
-                                                </a>
-                                            <?php else: ?>
-                                                <a href="reservations.php?action=approve&id=<?php echo $reservation['id']; ?>"
-                                                    class="dropdown-item approve"
-                                                    onclick="return confirm('Approve this reservation?')">
-                                                    <i class="fas fa-check"></i> Approve
-                                                </a>
-                                            <?php endif; ?>
-                                            <a href="reservations.php?action=reject&id=<?php echo $reservation['id']; ?>"
-                                                class="dropdown-item reject"
-                                                onclick="return confirm('Reject this reservation?')">
-                                                <i class="fas fa-times"></i> Reject
-                                            </a>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endwhile; ?>
-
-                        <?php if ($recent_pending->num_rows == 0): ?>
-                            <tr>
-                                <td colspan="7" class="text-center">No pending reservations</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
             </div>
         </div>
 

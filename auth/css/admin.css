@@ -273,81 +273,49 @@ a:hover {
 
 .stat-card {
     background: var(--bg-card);
-    padding: 1.5rem;
-    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
     transition: var(--transition);
-    position: relative;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-soft);
     border-color: var(--accent);
 }
 
 .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-md);
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
-    margin-bottom: 1rem;
 }
 
-.stat-card.total .stat-icon {
-    background: var(--accent-light);
-    color: var(--accent);
-}
-
-.stat-card.pending .stat-icon {
-    background: rgba(245, 158, 11, 0.1);
-    color: var(--warning);
-}
-
-.stat-card.approved .stat-icon {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-}
-
-.stat-card.today .stat-icon {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
-}
-
-.stat-card.rejected .stat-icon {
-    background: rgba(100, 116, 139, 0.1);
-    color: var(--text-muted);
-}
-
-.stat-card.refund {
-    background: #fff7ed;
-    border-left: 4px solid #f97316;
-}
-
-.stat-card.refund .stat-icon {
-    background: transparent;
-    color: #f97316;
-}
-
-.stat-card.refund .stat-info h3 {
-    color: #c2410c;
-}
+.stat-card.total .stat-icon { color: var(--accent); }
+.stat-card.pending .stat-icon { color: var(--warning); }
+.stat-card.approved .stat-icon { color: var(--success); }
+.stat-card.today .stat-icon { color: var(--danger); }
+.stat-card.rejected .stat-icon { color: var(--text-muted); }
+.stat-card.refund .stat-icon { color: #f97316; }
 
 .stat-info h3 {
-    font-size: 2rem;
-    margin-bottom: 0.25rem;
+    font-size: 1.5rem;
+    margin-bottom: 0;
+    line-height: 1.2;
 }
 
 .stat-info p {
     color: var(--text-muted);
     font-weight: 500;
     text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     letter-spacing: 0.05em;
+    margin-top: 2px;
 }
 
 /* Tables - High Definition */
@@ -659,7 +627,7 @@ a:hover {
     box-shadow: 0 0 0 4px var(--accent-light);
 }
 
-.btn-reset {
+.btn-reset, .btn-filter {
     background: #fff;
     color: var(--text-muted);
     border: 1px solid var(--border);
@@ -667,9 +635,10 @@ a:hover {
     border-radius: var(--radius-md);
     font-weight: 600;
     transition: var(--transition);
+    cursor: pointer;
 }
 
-.btn-reset:hover {
+.btn-reset:hover, .btn-filter:hover {
     background: #f1f5f9;
     color: var(--text-main);
 }

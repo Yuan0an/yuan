@@ -152,7 +152,7 @@ h3 {
     border: 1px solid #ddd;
     text-align: center;
     padding: 5px;
-    height: 50px;
+    height: 65px;
     vertical-align: top;
     cursor: pointer;
     position: relative;
@@ -163,8 +163,13 @@ h3 {
 }
 
 .calendar-day.selected {
-    background: #e3f2fd;
-    border: 2px solid #2196F3 !important;
+    background: #2196F3 !important;
+    color: white !important;
+    border: 2px solid #1976D2 !important;
+}
+
+.calendar-day.selected .day-availability {
+    color: #e3f2fd !important;
 }
 
 .calendar-day.available {

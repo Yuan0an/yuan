@@ -122,6 +122,14 @@ $conflict_blocked_dates = array_unique($conflict_blocked_dates);
 $days_in_month = date('t', strtotime("$year-$month-01"));
 $first_day = date('w', strtotime("$year-$month-01"));
 $today = date('Y-m-d');
+$current_time = date('H:i:s');
+
+// Get event start time
+$stmt_event = $conn->prepare("SELECT start_time FROM events WHERE id = ?");
+$stmt_event->bind_param("i", $event_id);
+$stmt_event->execute();
+$event_data = $stmt_event->get_result()->fetch_assoc();
+$event_start_time = $event_data['start_time'];
 
 $calendar = '<table class="calendar-table">';
 $calendar .= '<tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>';
@@ -142,8 +150,8 @@ for ($day = 1; $day <= $days_in_month; $day++) {
     $class = 'calendar-day';
     $status = '';
 
-    // Check if past date
-    if ($date_str < $today) {
+    // Check if past date or today but start time has passed
+    if ($date_str < $today || ($date_str == $today && $current_time > $event_start_time)) {
         $class .= ' past';
         $status = 'Past';
     }
