@@ -7,6 +7,8 @@ $port = getenv('MYSQLPORT') ?: (getenv('DB_PORT') ?: 3306);
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+date_default_timezone_set('Asia/Manila');
+
 try {
     $conn = new mysqli($host, $user, $pass, $dbname, $port);
     

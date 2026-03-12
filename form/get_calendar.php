@@ -96,7 +96,7 @@ for ($day = 1; $day <= $days_in_month; $day++) {
     // Check if past date or today but start time has passed
     if ($date_str < $today || ($date_str == $today && $current_time > $event_start_time)) {
         $class .= ' past';
-        $status = 'Past';
+        $status = 'past';
     }
     // Check if BLOCKED BY CONFLICT (Different or Same Event)
     else if (in_array($date_str, $conflict_blocked_dates)) {
