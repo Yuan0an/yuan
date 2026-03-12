@@ -1050,14 +1050,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                 </a>
                                             <?php endif; ?>
                                             <?php if (($res['status'] == 'for_refund') || (in_array($res['status'], ['cancelled', 'rejected']) && $res['payment_status'] == 'paid')): ?>
-                                                <a href="?action=mark_refunded&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Mark as Refunded"
-                                                   onclick="return confirm('Mark this refund as completed?')">
-                                                    <i class="fas fa-check-double"></i>
-                                                </a>
-                                                <a href="?action=refund_done&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Mark as Refunded without Proof" onclick="return confirm('Are you sure you want to mark this as refunded without proof? It is recommended to use the detailed refund form instead.')">
-                                                    <i class="fas fa-undo"></i>
-                                                </a>
-                                                <button type="button" class="btn-card-action view" title="Mark as Refunded (With Form)" onclick="openRefundModal(<?php echo $res['id']; ?>)">
+                                                <button type="button" class="btn-card-action view" title="Process Refund" onclick="openRefundModal(<?php echo $res['id']; ?>)">
                                                     <i class="fas fa-file-invoice-dollar"></i>
                                                 </button>
                                             <?php elseif ($res['status'] == 'approved' || ($res['status'] == 'pending' && $res['payment_status'] == 'paid')): ?>
