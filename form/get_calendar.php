@@ -9,127 +9,70 @@ $event_id = $_POST['event_id'];
 $start_date = sprintf("%04d-%02d-01", $year, $month);
 $end_date = date('Y-m-t', strtotime($start_date));
 
-// CONFLICT LOGIC START
+// --- DYNAMIC CONFLICT LOGIC START ---
 
-// 1. SAME DAY CONFLICTS
-$same_day_conflicts = [
-    1 => [3, 4],       // Day Tour vs Overnight 9AM, Overnight 2PM
-    2 => [3, 4, 5],    // Night Tour vs All Overnight
-    3 => [1, 2, 4, 5], // Overnight 9AM vs Day, Night, other Overnights
-    4 => [1, 2, 3, 5], // Overnight 2PM vs Day, Night, other Overnights
-    5 => [2, 3, 4]     // Overnight 7PM vs Night, other Overnights
-];
+// Get the requested event's valid hours
+$stmt_event = $conn->prepare("SELECT start_time, end_time FROM events WHERE id = ?");
+$stmt_event->bind_param("i", $event_id);
+$stmt_event->execute();
+$event_data = $stmt_event->get_result()->fetch_assoc();
+$req_start_time = $event_data['start_time'];
+$req_end_time = $event_data['end_time'];
+$event_start_time = $req_start_time; // Keep for the "past date" check
 
-// 2. PREVIOUS DAY CONFLICTS (Events on Date-1 blocking Date)
-// Map: [Previous Event ID] => [List of Blocked Current Event IDs]
-$prev_day_map = [
-    5 => [1, 2, 3, 4],
-    4 => [1, 3]
-];
+// Fetch all approved bookings that could possibly overlap with any day in this month
+// We expand the search window by 1 day on each side to catch overnight events
+$extended_start = date('Y-m-d', strtotime($start_date . ' -1 day'));
+$extended_end = date('Y-m-d', strtotime($end_date . ' +1 day'));
 
-// 3. NEXT DAY CONFLICTS (Events on Date+1 blocking Date)
-// Map: [Current Event ID] => [List of Blocked Next Event IDs]
-$next_day_check_map = [
-    5 => [1, 2, 3, 4],
-    4 => [1, 3]
-];
+$stmt_bookings = $conn->prepare("
+    SELECT booking_date, start_time, end_time 
+    FROM bookings 
+    WHERE status = 'approved' 
+    AND booking_date BETWEEN ? AND ?
+");
+$stmt_bookings->bind_param("ss", $extended_start, $extended_end);
+$stmt_bookings->execute();
+$approved_bookings = $stmt_bookings->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$direct_booked_dates = [];
 $conflict_blocked_dates = [];
 
-// Helper to add dates
-function add_dates($result, &$array)
-{
-    while ($row = $result->fetch_assoc()) {
-        $array[] = $row['booking_date'];
+// For each day of the month, test if the requested event schedule overlaps with ANY approved booking
+$days_in_month = date('t', strtotime("$year-$month-01"));
+for ($day = 1; $day <= $days_in_month; $day++) {
+    $current_date = sprintf("%04d-%02d-%02d", $year, $month, $day);
+    
+    // Requested event timeline for this date
+    $req_start_dt = $current_date . ' ' . $req_start_time;
+    if ($req_end_time <= $req_start_time) {
+        $req_end_dt = date('Y-m-d H:i:s', strtotime($current_date . ' +1 day ' . $req_end_time));
+    } else {
+        $req_end_dt = $current_date . ' ' . $req_end_time;
     }
-}
 
-// A. Get bookings for THIS event (Standard check -> 'Booked')
-$stmt = $conn->prepare("SELECT DISTINCT booking_date FROM bookings WHERE event_id = ? AND booking_date BETWEEN ? AND ? AND status = 'approved'");
-$stmt->bind_param("iss", $event_id, $start_date, $end_date);
-$stmt->execute();
-add_dates($stmt->get_result(), $direct_booked_dates);
-
-// B. Get SAME DAY conflicting bookings (Conflict -> 'Unavailable')
-if (isset($same_day_conflicts[$event_id])) {
-    $ids = $same_day_conflicts[$event_id];
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $types = str_repeat('i', count($ids)) . 'ss';
-    $params = array_merge($ids, [$start_date, $end_date]);
-
-    $sql = "SELECT DISTINCT booking_date FROM bookings WHERE event_id IN ($placeholders) AND booking_date BETWEEN ? AND ? AND status = 'approved'";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    add_dates($stmt->get_result(), $conflict_blocked_dates);
-}
-
-// C. Get PREVIOUS DAY conflicting bookings (Spillover -> 'Unavailable')
-foreach ($prev_day_map as $prev_id => $blocked_list) {
-    if (in_array($event_id, $blocked_list)) {
-        $prev_start = date('Y-m-d', strtotime($start_date . ' -1 day'));
-        $prev_end = date('Y-m-d', strtotime($end_date . ' -1 day'));
-
-        $sql = "SELECT DISTINCT booking_date FROM bookings WHERE event_id = ? AND booking_date BETWEEN ? AND ? AND status = 'approved'";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iss", $prev_id, $prev_start, $prev_end);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        while ($row = $res->fetch_assoc()) {
-            // Block the NEXT DAY
-            $blocked_day = date('Y-m-d', strtotime($row['booking_date'] . ' +1 day'));
-            if ($blocked_day >= $start_date && $blocked_day <= $end_date) {
-                $conflict_blocked_dates[] = $blocked_day;
-            }
+    foreach ($approved_bookings as $bk) {
+        $bk_start_dt = $bk['booking_date'] . ' ' . $bk['start_time'];
+        if ($bk['end_time'] <= $bk['start_time']) {
+            $bk_end_dt = date('Y-m-d H:i:s', strtotime($bk['booking_date'] . ' +1 day ' . $bk['end_time']));
+        } else {
+            $bk_end_dt = $bk['booking_date'] . ' ' . $bk['end_time'];
+        }
+        
+        // Strict Overlap Condition: A overlaps B if A starts before B ends AND B starts before A ends
+        if ($req_start_dt < $bk_end_dt && $bk_start_dt < $req_end_dt) {
+            $conflict_blocked_dates[] = $current_date;
+            break; // No need to check other bookings for this date
         }
     }
 }
 
-// D. Get NEXT DAY conflicting bookings (Overlap -> 'Unavailable')
-if (isset($next_day_check_map[$event_id])) {
-    $ids_to_check = $next_day_check_map[$event_id];
-    $placeholders = implode(',', array_fill(0, count($ids_to_check), '?'));
-
-    // We check date range [Start+1, End+1]
-    $next_start = date('Y-m-d', strtotime($start_date . ' +1 day'));
-    $next_end = date('Y-m-d', strtotime($end_date . ' +1 day'));
-
-    $types = str_repeat('i', count($ids_to_check)) . 'ss';
-    $params = array_merge($ids_to_check, [$next_start, $next_end]);
-
-    $sql = "SELECT DISTINCT booking_date FROM bookings WHERE event_id IN ($placeholders) AND booking_date BETWEEN ? AND ? AND status = 'approved'";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    while ($row = $res->fetch_assoc()) {
-        // Block the PREVIOUS DAY (Our booking day)
-        $blocked_day = date('Y-m-d', strtotime($row['booking_date'] . ' -1 day'));
-        if ($blocked_day >= $start_date && $blocked_day <= $end_date) {
-            $conflict_blocked_dates[] = $blocked_day;
-        }
-    }
-}
-
-// Ensure Uniqueness
-$direct_booked_dates = array_unique($direct_booked_dates);
-$conflict_blocked_dates = array_unique($conflict_blocked_dates);
-
-// --- CONFLICT LOGIC END ---
+// --- DYNAMIC CONFLICT LOGIC END ---
 
 // Generate calendar
-$days_in_month = date('t', strtotime("$year-$month-01"));
 $first_day = date('w', strtotime("$year-$month-01"));
 $today = date('Y-m-d');
 $current_time = date('H:i:s');
 
-// Get event start time
-$stmt_event = $conn->prepare("SELECT start_time FROM events WHERE id = ?");
-$stmt_event->bind_param("i", $event_id);
-$stmt_event->execute();
-$event_data = $stmt_event->get_result()->fetch_assoc();
-$event_start_time = $event_data['start_time'];
 
 $calendar = '<table class="calendar-table">';
 $calendar .= '<tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>';
@@ -155,12 +98,7 @@ for ($day = 1; $day <= $days_in_month; $day++) {
         $class .= ' past';
         $status = 'Past';
     }
-    // Check if DIRECTLY BOOKED (Same Event)
-    else if (in_array($date_str, $direct_booked_dates)) {
-        $class .= ' approved';
-        $status = 'Booked';
-    }
-    // Check if BLOCKED BY CONFLICT (Different Event)
+    // Check if BLOCKED BY CONFLICT (Different or Same Event)
     else if (in_array($date_str, $conflict_blocked_dates)) {
         $class .= ' approved';
         $status = 'Booked';
