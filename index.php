@@ -6,7 +6,7 @@ require_once __DIR__ . "/database/database.php";
 <!-- Hero Section -->
 <section class="hero">
     <div class="hero-content">
-        <h1>Welcome to Ck Resort & Events Place</h1>
+        <h1>Welcome to CK Resort & Events Place</h1>
         <p>Relax, unwind, and enjoy unforgettable moments.</p>
         <a href="/form/index.php" class="btn">Book Now</a>
     </div>
@@ -139,11 +139,10 @@ require_once __DIR__ . "/database/database.php";
     <ol>
         <li>First come first serve.</li>
         <li>We give priority to 22hrs slots bookings during weekend.</li>
-        <li>You can pay via cash or thru online banking.</li>
+        <li>You can pay via Cash, GCash or thru online banking.</li>
         <li>
-            For online banking please send the proof of payment
-            (i.e mobile banking confirmation) to @ckresort&eventsplace FB page
-            as soon as possible.
+            For online banking and GCash please upload the proof of payment
+            to the check status or send it to our FB page CK Resort & Events Place.
         </li>
         <li>
             Balance is payable to the staff upon check-in.
