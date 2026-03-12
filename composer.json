@@ -1,0 +1,14 @@
+{
+    "name": "yuan0an/resort-system",
+    "description": "CK Resort Reservation System",
+    "require": {
+        "php": ">=8.0",
+        "ext-mysqli": "*",
+        "ext-json": "*"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}
