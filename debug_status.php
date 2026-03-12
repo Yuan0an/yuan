@@ -19,12 +19,27 @@ echo "Port: " . $port . "<br>";
 
 echo "<h3>Connection Test:</h3>";
 try {
-    $conn = new mysqli($host, $user, $pass, $dbname, $port);
+    if (!class_exists('mysqli')) {
+        throw new Error("PHP Extension 'mysqli' is NOT installed/enabled!");
+    }
+    
+    $conn = @new mysqli($host, $user, $pass, $dbname, $port);
+    
+    if ($conn->connect_error) {
+        throw new Error("Connection Error (" . $conn->connect_errno . "): " . $conn->connect_error);
+    }
+    
     echo "✅ Connection Successful!<br>";
     
     $res = $conn->query("SHOW TABLES");
     echo "Tables found: " . ($res ? $res->num_rows : 0) . "<br>";
-} catch (Exception $e) {
-    echo "❌ Connection Failed: " . $e->getMessage() . "<br>";
+    if ($res) {
+        while ($row = $res->fetch_array()) {
+            echo "- " . $row[0] . "<br>";
+        }
+    }
+} catch (Throwable $e) {
+    echo "❌ ERROR: " . $e->getMessage() . "<br>";
+    echo "File: " . $e->getFile() . " on line " . $e->getLine() . "<br>";
 }
 ?>
