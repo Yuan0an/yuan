@@ -592,10 +592,10 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                 </a>
                             <?php endif; ?>
                             <?php if (($single_reservation['status'] == 'for_refund') || (in_array($single_reservation['status'], ['cancelled', 'rejected']) && $single_reservation['payment_status'] == 'paid')): ?>
-                                <a href="?action=mark_refunded&id=<?php echo $single_reservation['id']; ?>" class="dropdown-item refund"
-                                    onclick="return confirm('Mark this reservation as refunded?')">
-                                    <i class="fas fa-undo"></i> Mark as Refunded
-                                </a>
+                                <button type="button" class="dropdown-item refund" style="text-align: left; background: none; border: none; width: 100%;"
+                                    onclick="openRefundModal(<?php echo $single_reservation['id']; ?>)">
+                                    <i class="fas fa-file-invoice-dollar"></i> Process Refund
+                                </button>
                             <?php endif; ?>
                             <?php if ($single_reservation['payment_status'] == 'paid' || $single_reservation['status'] == 'pending'): ?>
                                 <a href="?action=reject_payment&id=<?php echo $single_reservation['id']; ?>" class="dropdown-item reject"
@@ -1081,7 +1081,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
     <div id="refundModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeRefundModal()">&times;</span>
-            <h2><i class="fas fa-undo"></i> Mark as Refunded</h2>
+            <h2><i class="fas fa-file-invoice-dollar" style="color: #4CAF50;"></i> Process Refund</h2>
             <form id="refundForm" method="POST" action="reservations.php" enctype="multipart/form-data">
                 <input type="hidden" name="booking_id" id="refund_booking_id">
                 
