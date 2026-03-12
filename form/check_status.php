@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("
             SELECT b.*, c.full_name, c.email, c.phone, c.company,
                    p.payment_method, p.payment_status, p.total_price,
+                   p.refund_method, p.refund_proof, p.refunded_at,
                    e.name as event_base_name
             FROM bookings b
             JOIN customers c ON b.customer_id = c.id
@@ -345,6 +346,43 @@ while($s_row = $settings_res->fetch_assoc()) {
                         </div>
                     </div>
                 </div>
+
+                <?php if ($reservation['payment_status'] === 'refunded'): ?>
+                <!-- Refund Info -->
+                <div class="cs-detail-card">
+                    <div class="cs-card-header">
+                        <i class="fas fa-undo"></i>
+                        <h3>Refund Information</h3>
+                    </div>
+                    <div class="cs-card-body">
+                        <div class="cs-info-item">
+                            <label>Refund Method</label>
+                            <span class="cs-info-value"><?php echo htmlspecialchars($reservation['refund_method'] ?? 'N/A'); ?></span>
+                        </div>
+                        <div class="cs-info-row">
+                            <span class="cs-info-label">Processed On</span>
+                            <span class="cs-info-value">
+                                <?php echo !empty($reservation['refunded_at']) ? date('F j, Y g:i A', strtotime($reservation['refunded_at'])) : 'N/A'; ?>
+                            </span>
+                        </div>
+                        <?php if (!empty($reservation['refund_proof'])): ?>
+                            <div class="cs-info-row" style="margin-top: 15px; display: block;">
+                                <span class="cs-info-label" style="margin-bottom: 8px; display: block;">Proof of Refund</span>
+                                <?php 
+                                $refund_src = '/' . ltrim($reservation['refund_proof'], '/');
+                                if (pathinfo($refund_src, PATHINFO_EXTENSION) === 'pdf'): 
+                                ?>
+                                    <a href="<?php echo htmlspecialchars($refund_src); ?>" target="_blank" class="cs-btn-action" style="display: inline-block; padding: 8px 15px; text-decoration: none; background: #e2e8f0; color: #333; border-radius: 6px; font-size: 0.9rem;">
+                                        <i class="fas fa-file-pdf"></i> View PDF Receipt
+                                    </a>
+                                <?php else: ?>
+                                    <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" style="max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.src='../assets/placeholder-receipt.png'">
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Itemized Breakdown -->
                 <div class="cs-detail-card">

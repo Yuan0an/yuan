@@ -88,7 +88,13 @@ CREATE TABLE payments (
     total_price DECIMAL(10,2),
     time_uploaded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+    refund_method VARCHAR(50),
+    refund_proof VARCHAR(255),
+    refunded_by INT,
+    refunded_at TIMESTAMP NULL,
+
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+    FOREIGN KEY (refunded_by) REFERENCES admins(id)
 );
 
 INSERT INTO `events` (`id`, `name`, `start_time`, `end_time`, `max_persons`, `is_overnight`) VALUES

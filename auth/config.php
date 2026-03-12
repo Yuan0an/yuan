@@ -26,6 +26,10 @@ try {
     $ensureColumn('bookings', 'reservation_id', 'VARCHAR(10) UNIQUE');
     $ensureColumn('payments', 'receipt_data', 'LONGTEXT');
     $ensureColumn('payments', 'time_uploaded', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+    $ensureColumn('payments', 'refund_method', 'VARCHAR(50)');
+    $ensureColumn('payments', 'refund_proof', 'VARCHAR(255)');
+    $ensureColumn('payments', 'refunded_by', 'INT');
+    $ensureColumn('payments', 'refunded_at', 'TIMESTAMP NULL');
     $ensureColumn('admins', 'role', "VARCHAR(20) DEFAULT 'admin' AFTER email");
     $ensureColumn('events', 'pricing_logic', "TEXT AFTER is_overnight");
     $ensureColumn('events', 'sort_order', "INT DEFAULT 0");

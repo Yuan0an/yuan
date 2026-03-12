@@ -293,7 +293,6 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             break;
 
         case 'refund_done':
-        case 'mark_refunded':
             $conn->begin_transaction();
             try {
                 $stmt = $conn->prepare("UPDATE payments SET payment_status = 'refunded' WHERE booking_id = ?");
@@ -314,6 +313,48 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     }
 
     header('Location: reservations.php' . (isset($_GET['id']) && !isset($_GET['action']) ? '?id=' . $id : ''));
+    exit;
+}
+
+// Handle form submission for Mark as Refunded
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_refund'])) {
+    $booking_id = intval($_POST['booking_id']);
+    $refund_method = $conn->real_escape_string($_POST['refund_method']);
+    
+    // Process file upload
+    $refund_proof = '';
+    if (isset($_FILES['refund_proof']) && $_FILES['refund_proof']['error'] == 0) {
+        $upload_dir = '../uploads/refunds/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+        
+        $file_name = time() . '_' . str_replace(' ', '_', $_FILES['refund_proof']['name']);
+        if (move_uploaded_file($_FILES['refund_proof']['tmp_name'], $upload_dir . $file_name)) {
+            $refund_proof = 'uploads/refunds/' . $file_name;
+        }
+    }
+
+    $admin_id = $_SESSION['admin_id'];
+
+    $conn->begin_transaction();
+    try {
+        // Update payments with refund details
+        $stmt = $conn->prepare("UPDATE payments SET payment_status = 'refunded', refund_method = ?, refund_proof = ?, refunded_by = ?, refunded_at = NOW() WHERE booking_id = ?");
+        $stmt->bind_param("ssii", $refund_method, $refund_proof, $admin_id, $booking_id);
+        $stmt->execute();
+        
+        // Update bookings status
+        $stmt2 = $conn->prepare("UPDATE bookings SET status = 'rejected' WHERE id = ?");
+        $stmt2->bind_param("i", $booking_id);
+        $stmt2->execute();
+        
+        $conn->commit();
+        $_SESSION['message'] = 'Reservation marked as refunded with proof attached';
+    } catch (Exception $e) {
+        $conn->rollback();
+        $_SESSION['error'] = 'Error processing refund: ' . $e->getMessage();
+    }
+    
+    header('Location: reservations.php' . (isset($_POST['booking_id']) ? '?id=' . $booking_id : ''));
     exit;
 }
 
@@ -413,6 +454,7 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
         SELECT b.*, c.full_name, c.email, c.phone, c.alt_phone, c.company,
                p.payment_method, p.payment_status, p.time_uploaded, p.total_price,
                p.payment_proof, p.receipt_data,
+               p.refund_method, p.refund_proof, p.refunded_by, p.refunded_at,
                e.name as event_name, e.max_persons, 
                a.full_name as admin_name, a.email as admin_email
         FROM bookings b
@@ -702,6 +744,40 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                             <?php endif; ?>
                         </div>
                     </div>
+
+                    <?php if ($single_reservation['payment_status'] === 'refunded'): ?>
+                    <div class="detail-card">
+                        <h3><i class="fas fa-undo"></i> Refund Information</h3>
+                        <div class="detail-content">
+                            <p><strong>Refund Method:</strong> <?php echo htmlspecialchars($single_reservation['refund_method'] ?? 'N/A'); ?></p>
+                            <p><strong>Refunded At:</strong> 
+                                <?php echo !empty($single_reservation['refunded_at']) ? date('F j, Y g:i A', strtotime($single_reservation['refunded_at'])) : 'N/A'; ?>
+                            </p>
+                            
+                            <?php if (!empty($single_reservation['refund_proof'])): ?>
+                                <p><strong>Refund Proof:</strong></p>
+                                <?php 
+                                $refund_src = '/' . ltrim($single_reservation['refund_proof'], '/');
+                                // Check if PDF
+                                if (pathinfo($refund_src, PATHINFO_EXTENSION) === 'pdf'): 
+                                ?>
+                                    <a href="<?php echo htmlspecialchars($refund_src); ?>" target="_blank" class="btn-save" style="display: inline-block; padding: 5px 10px; text-decoration: none;">
+                                        <i class="fas fa-file-pdf"></i> View PDF Proof
+                                    </a>
+                                <?php else: ?>
+                                    <div class="receipt-thumbnail-container" onclick="openReceiptModal('<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>', 'Refund Proof #<?php echo $single_reservation['id']; ?>')">
+                                        <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" class="receipt-thumbnail" onerror="this.src='../assets/placeholder-receipt.png'">
+                                        <div class="thumbnail-overlay">
+                                            <i class="fas fa-search-plus"></i>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <p><strong>Refund Proof:</strong> <span class="text-muted">No proof uploaded</span></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="detail-notes">
@@ -978,6 +1054,12 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
                                                    onclick="return confirm('Mark this refund as completed?')">
                                                     <i class="fas fa-check-double"></i>
                                                 </a>
+                                                <a href="?action=refund_done&id=<?php echo $res['id']; ?>" class="btn-card-action approve" title="Mark as Refunded without Proof" onclick="return confirm('Are you sure you want to mark this as refunded without proof? It is recommended to use the detailed refund form instead.')">
+                                                    <i class="fas fa-undo"></i>
+                                                </a>
+                                                <button type="button" class="btn-card-action view" title="Mark as Refunded (With Form)" onclick="openRefundModal(<?php echo $res['id']; ?>)">
+                                                    <i class="fas fa-file-invoice-dollar"></i>
+                                                </button>
                                             <?php elseif ($res['status'] == 'approved' || ($res['status'] == 'pending' && $res['payment_status'] == 'paid')): ?>
                                                 <a href="?action=cancel&id=<?php echo $res['id']; ?>" class="btn-card-action cancel" title="Cancel & Refund Later">
                                                     <i class="fas fa-ban"></i>
@@ -1002,12 +1084,99 @@ if (isset($_GET['id']) && !isset($_GET['action'])) {
 
     <script src="js/reservations.js"></script>
 
-    <!-- Receipt Modal -->
-    <div id="receiptModal" class="receipt-modal" onclick="closeReceiptModal()">
-        <span class="modal-close">&times;</span>
-        <img class="modal-content" id="modalImage">
-        <div id="modalCaption" class="modal-caption"></div>
+    <!-- Refund Modal -->
+    <div id="refundModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRefundModal()">&times;</span>
+            <h2><i class="fas fa-undo"></i> Mark as Refunded</h2>
+            <form id="refundForm" method="POST" action="reservations.php" enctype="multipart/form-data">
+                <input type="hidden" name="booking_id" id="refund_booking_id">
+                
+                <div class="form-group">
+                    <label>Refund Method *</label>
+                    <select name="refund_method" required class="form-control">
+                        <option value="">Select Method</option>
+                        <option value="GCash">GCash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cash">Cash</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload Proof of Refund *</label>
+                    <input type="file" name="refund_proof" accept="image/*,.pdf" required class="form-control">
+                    <small>Upload receipt or screenshot. Max 5MB (.jpg, .png, .pdf)</small>
+                </div>
+                
+                <button type="submit" name="process_refund" class="btn btn-primary" style="margin-top: 15px; width: 100%;">
+                    Submit Refund
+                </button>
+            </form>
+        </div>
     </div>
+
+    <!-- Notes Modal -->
+    <div id="notesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeNotesModal()">&times;</span>
+            <h2><i class="fas fa-sticky-note"></i> Edit Admin Notes</h2>
+            <form id="notesForm" method="POST" action="reservations.php">
+                <input type="hidden" name="id" id="notes_booking_id">
+                <div class="form-group">
+                    <label for="admin_notes_input">Notes</label>
+                    <textarea name="admin_notes" id="admin_notes_input" rows="5" class="form-control"></textarea>
+                </div>
+                <button type="submit" name="update_notes" class="btn btn-primary" style="margin-top: 15px; width: 100%;">Save Notes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Receipt Modal Scripts
+        function openReceiptModal(src, caption) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('modalCaption').innerHTML = caption;
+            document.getElementById('receiptModal').style.display = 'block';
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').style.display = 'none';
+        }
+
+        // Notes Modal Scripts
+        function openNotesModal(id, notes) {
+            document.getElementById('notes_booking_id').value = id;
+            document.getElementById('admin_notes_input').value = notes;
+            document.getElementById('notesModal').style.display = 'block';
+        }
+
+        function closeNotesModal() {
+            document.getElementById('notesModal').style.display = 'none';
+        }
+
+        // Refund Modal Scripts
+        function openRefundModal(id) {
+            document.getElementById('refund_booking_id').value = id;
+            document.getElementById('refundModal').style.display = 'block';
+        }
+
+        function closeRefundModal() {
+            document.getElementById('refundModal').style.display = 'none';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function (event) {
+            if (event.target == document.getElementById('notesModal')) {
+                closeNotesModal();
+            }
+            if (event.target == document.getElementById('refundModal')) {
+                closeRefundModal();
+            }
+            if (event.target == document.getElementById('receiptModal')) {
+                closeReceiptModal();
+            }
+        }
+    </script>
 </body>
 
 </html>
