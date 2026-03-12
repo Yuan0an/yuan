@@ -5,9 +5,11 @@ $pass = getenv('MYSQLPASSWORD') ?: (getenv('DB_PASS') ?: '');
 $dbname = getenv('MYSQL_DATABASE') ?: (getenv('MYSQLDATABASE') ?: (getenv('DB_NAME') ?: (getenv('MYSQLHOST') ? 'railway' : 'resort_db')));
 $port = getenv('MYSQLPORT') ?: (getenv('DB_PORT') ?: 3306);
 
-$conn = new mysqli($host, $user, $pass, $dbname, $port);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error);
+try {
+    $conn = new mysqli($host, $user, $pass, $dbname, $port);
+} catch (mysqli_sql_exception $e) {
+    die("Database connection failed. Please check your Railway environment variables.");
 }
 ?>
