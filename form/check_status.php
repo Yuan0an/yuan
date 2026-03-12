@@ -383,9 +383,9 @@ while($s_row = $settings_res->fetch_assoc()) {
                                     <a href="<?php echo htmlspecialchars($refund_src); ?>" target="_blank" class="cs-btn-action" style="display: inline-block; padding: 8px 15px; text-decoration: none; background: #e2e8f0; color: #333; border-radius: 6px; font-size: 0.9rem;">
                                         <i class="fas fa-file-pdf"></i> View PDF Receipt
                                     </a>
-                                    <?php else: ?>
-                                        <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" style="max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.src='../assets/placeholder-receipt.png'">
-                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <img src="<?php echo htmlspecialchars($refund_src, ENT_QUOTES); ?>" alt="Refund Proof" style="max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.src='../assets/placeholder-receipt.png'">
+                                <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
